@@ -515,13 +515,5 @@ public class ExcelToHtml {
     }
 
     public static void main(String[] args) {
-        ExcelToHtml excelToHtml = new ExcelToHtml();
-        try {
-            String fileName = excelToHtml.excelToHtml(
-                    "F:\\","xlsx",".csv","F:\\测试");
-            System.out.println(fileName);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 }

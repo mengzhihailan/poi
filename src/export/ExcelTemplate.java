@@ -3,7 +3,6 @@ package export;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
-import org.apache.poi.xssf.usermodel.XSSFRow;
 
 import java.io.*;
 import java.util.*;
@@ -149,12 +148,12 @@ public class ExcelTemplate {
      * @param fromRowIndex 模板行的索引
      * @param toRowIndex 开始插入的row索引
      * @param areaValues 替换模板row区域的${}值
-     * @return List<Row> 插入的行
+     * @return int 插入的行数量
      * @throws IOException
      * @throws InvalidFormatException
      * */
-    public List<Row> addRowByExist(int fromRowIndex, int toRowIndex,
-                                   Map<Integer,LinkedList<String>> areaValues)
+    public int addRowByExist(int fromRowIndex, int toRowIndex,
+                             Map<Integer,LinkedList<String>> areaValues)
             throws IOException, InvalidFormatException {
         return addRowByExist(0,fromRowIndex,fromRowIndex,toRowIndex,areaValues,true);
     }
@@ -170,13 +169,12 @@ public class ExcelTemplate {
      * @param toRowIndex 开始插入的row索引
      * @param areaValues 替换模板row区域的${}值
      * @param delRowTemp 是否删除模板row区域
-     * @return List<Row> 插入的行
-     * @return List<Row> 插入的行
+     * @return int 插入的行数量
      * @throws IOException
      * @throws InvalidFormatException
      * */
-    public List<Row> addRowByExist(int fromRowStartIndex, int fromRowEndIndex,int toRowIndex,
-                                   Map<Integer,LinkedList<String>> areaValues, boolean delRowTemp)
+    public int addRowByExist(int fromRowStartIndex, int fromRowEndIndex,int toRowIndex,
+                             Map<Integer,LinkedList<String>> areaValues, boolean delRowTemp)
             throws IOException, InvalidFormatException {
         return addRowByExist(0,fromRowStartIndex,fromRowEndIndex,toRowIndex,areaValues,true);
     }
@@ -191,12 +189,12 @@ public class ExcelTemplate {
      * @param fromRowIndex 模板行的索引
      * @param toRowIndex 开始插入的row索引
      * @param areaValues 替换模板row区域的${}值
-     * @return List<Row> 插入的行
+     * @return int 插入的行数量
      * @throws IOException
      * @throws InvalidFormatException
      * */
-    public List<Row> addRowByExist(int sheetNo,int fromRowIndex, int toRowIndex,
-                                   Map<Integer,LinkedList<String>> areaValues)
+    public int addRowByExist(int sheetNo,int fromRowIndex, int toRowIndex,
+                             Map<Integer,LinkedList<String>> areaValues)
             throws IOException, InvalidFormatException {
         return addRowByExist(sheetNo,fromRowIndex,fromRowIndex,toRowIndex,areaValues,true);
     }
@@ -213,12 +211,12 @@ public class ExcelTemplate {
      * @param toRowIndex 开始插入的row索引
      * @param areaValues 替换模板row区域的${}值
      * @param delRowTemp 是否删除模板row区域
-     * @return List<Row> 插入的行
+     * @return int 插入的行数量
      * @throws IOException
      * @throws InvalidFormatException
      * */
-    public List<Row> addRowByExist(int sheetNo,int fromRowStartIndex, int fromRowEndIndex,int toRowIndex,
-                                   Map<Integer,LinkedList<String>> areaValues, boolean delRowTemp)
+    public int addRowByExist(int sheetNo,int fromRowStartIndex, int fromRowEndIndex,int toRowIndex,
+                             Map<Integer,LinkedList<String>> areaValues, boolean delRowTemp)
             throws InvalidFormatException, IOException {
         exception();
         if(!examine()
@@ -227,7 +225,7 @@ public class ExcelTemplate {
                 || !examineSheetRow(fromRowEndIndex)
                 || !examineSheetRow(toRowIndex)
                 || fromRowStartIndex > fromRowEndIndex)
-            return null;
+            return 0;
         int areaNum;List<Row> rows = new ArrayList<>();
         if(areaValues != null){
             int n = 0,f = areaValues.size() * (areaNum = (fromRowEndIndex - fromRowStartIndex + 1));
@@ -261,7 +259,7 @@ public class ExcelTemplate {
                 }
             }
         }
-        return rows;
+        return rows.size();
     }
 
     /**
@@ -660,5 +658,11 @@ public class ExcelTemplate {
     public int hashCode(){
         int hash = Objects.hashCode(path);
         return hash >>> 16 ^ hash;
+    }
+
+    @Override
+    public String toString(){
+        return "ExcelTemplate from " + path + " is " +
+                (examine() ? "effective" : "invalid");
     }
 }

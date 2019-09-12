@@ -3,6 +3,7 @@ package export;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.usermodel.XSSFRow;
 
 import java.io.*;
 import java.util.*;
@@ -79,6 +80,8 @@ public class ExcelTemplate {
 
     private Workbook workbook;
 
+    private Sheet[] sheets;
+
     private Sheet sheet;
 
     private Throwable ex;
@@ -96,8 +99,13 @@ public class ExcelTemplate {
     private void init(){
         File file = new File(path);
         try (InputStream is = new FileInputStream(file)){
-            workbook = WorkbookFactory.create(is) ;
-            sheet = workbook.getSheetAt(0);
+            workbook = WorkbookFactory.create(is);
+            sheets = new Sheet[workbook.getNumberOfSheets()];
+            for(int i = 0;i < sheets.length;i++){
+                sheets[i] = workbook.getSheetAt(i);
+            }
+            if(sheets.length > 0)
+                sheet = sheets[0];
         } catch (InvalidFormatException e) {
             ex = e;
         } catch (IOException e) {
@@ -105,17 +113,28 @@ public class ExcelTemplate {
         }
     }
 
+    private boolean initSheet(int sheetNo){
+        if(sheetNo < 0 || sheetNo > sheets.length - 1)
+            return false;
+        sheet = sheets[sheetNo];
+        return true;
+    }
+
     /**
      * 验证模板是否可用
      * @return true-可用 false-不可用
      * */
     public boolean examine(){
-        if(ex == null && workbook != null && sheet != null)
+        if(ex == null
+                && workbook != null
+                && sheets != null
+                && sheets.length > 0
+                && sheet != null)
             return true;
         return false;
     }
 
-    private boolean examineRowIndex(int index){
+    private boolean examineSheetRow(int index){
         if(index < 0 || index > sheet.getLastRowNum())
             return false;
         return true;
@@ -123,7 +142,7 @@ public class ExcelTemplate {
 
     /**
      * 使用一个已经存在的row作为模板，
-     * 从sheet的toRowNum行开始插入这个row模板的副本,
+     * 从sheet[0]的toRowNum行开始插入这个row模板的副本,
      * 并且使用areaValue从左至右，从上至下的替换掉
      * row区域中值为 ${} 的单元格的值
      *
@@ -137,7 +156,49 @@ public class ExcelTemplate {
     public List<Row> addRowByExist(int fromRowIndex, int toRowIndex,
                                    Map<Integer,LinkedList<String>> areaValues)
             throws IOException, InvalidFormatException {
-        return addRowByExist(fromRowIndex,fromRowIndex,toRowIndex,areaValues,true);
+        return addRowByExist(0,fromRowIndex,fromRowIndex,toRowIndex,areaValues,true);
+    }
+
+    /**
+     * 使用一个已经存在的row作为模板，
+     * 从sheet[0]的toRowNum行开始插入这个row模板的副本,
+     * 并且使用areaValue从左至右，从上至下的替换掉
+     * row区域中值为 ${} 的单元格的值
+     *
+     * @param fromRowStartIndex 模板row区域的开始索引
+     * @param fromRowEndIndex 模板row区域的结束索引
+     * @param toRowIndex 开始插入的row索引
+     * @param areaValues 替换模板row区域的${}值
+     * @param delRowTemp 是否删除模板row区域
+     * @return List<Row> 插入的行
+     * @return List<Row> 插入的行
+     * @throws IOException
+     * @throws InvalidFormatException
+     * */
+    public List<Row> addRowByExist(int fromRowStartIndex, int fromRowEndIndex,int toRowIndex,
+                                   Map<Integer,LinkedList<String>> areaValues, boolean delRowTemp)
+            throws IOException, InvalidFormatException {
+        return addRowByExist(0,fromRowStartIndex,fromRowEndIndex,toRowIndex,areaValues,true);
+    }
+
+    /**
+     * 使用一个已经存在的row作为模板，
+     * 从sheet[sheetNo]的toRowNum行开始插入这个row模板的副本,
+     * 并且使用areaValue从左至右，从上至下的替换掉
+     * row区域中值为 ${} 的单元格的值
+     *
+     * @param sheetNo 需要操作的Sheet的编号
+     * @param fromRowIndex 模板行的索引
+     * @param toRowIndex 开始插入的row索引
+     * @param areaValues 替换模板row区域的${}值
+     * @return List<Row> 插入的行
+     * @throws IOException
+     * @throws InvalidFormatException
+     * */
+    public List<Row> addRowByExist(int sheetNo,int fromRowIndex, int toRowIndex,
+                                   Map<Integer,LinkedList<String>> areaValues)
+            throws IOException, InvalidFormatException {
+        return addRowByExist(sheetNo,fromRowIndex,fromRowIndex,toRowIndex,areaValues,true);
     }
 
     /**
@@ -146,6 +207,7 @@ public class ExcelTemplate {
      * areaValue会从左至右，从上至下的替换板row区域
      * 中值为 ${} 的单元格的值
      *
+     * @param sheetNo 需要操作的Sheet的编号
      * @param fromRowStartIndex 模板row区域的开始索引
      * @param fromRowEndIndex 模板row区域的结束索引
      * @param toRowIndex 开始插入的row索引
@@ -155,28 +217,34 @@ public class ExcelTemplate {
      * @throws IOException
      * @throws InvalidFormatException
      * */
-    public List<Row> addRowByExist(int fromRowStartIndex, int fromRowEndIndex,int toRowIndex,
+    public List<Row> addRowByExist(int sheetNo,int fromRowStartIndex, int fromRowEndIndex,int toRowIndex,
                                    Map<Integer,LinkedList<String>> areaValues, boolean delRowTemp)
             throws InvalidFormatException, IOException {
         exception();
-        if(!examine() || !examineRowIndex(fromRowStartIndex)
-                || !examineRowIndex(fromRowEndIndex)
-                || !examineRowIndex(toRowIndex)
+        if(!examine()
+                || !initSheet(sheetNo)
+                || !examineSheetRow(fromRowStartIndex)
+                || !examineSheetRow(fromRowEndIndex)
+                || !examineSheetRow(toRowIndex)
                 || fromRowStartIndex > fromRowEndIndex)
             return null;
         int areaNum;List<Row> rows = new ArrayList<>();
         if(areaValues != null){
             int n = 0,f = areaValues.size() * (areaNum = (fromRowEndIndex - fromRowStartIndex + 1));
             // 在插入前腾出空间，避免新插入的行覆盖原有的行
-            shiftRows(toRowIndex,sheet.getLastRowNum(),f);
+            shiftAndCreateRows(sheetNo,toRowIndex,f);
             // 读取需要插入的数据
             for (Integer key:areaValues.keySet()){
                 List<Row> temp = new LinkedList<>();
                 // 插入行
-                for(int i = 0;i < areaNum;i++){
+                for(int i = sheet.getFirstRowNum();i < areaNum;i++){
                     int num = areaNum * n + i;
-                    Row toRow = sheet.createRow(toRowIndex + num);
-                    Row row = copyRow(sheet.getRow(fromRowStartIndex + i),toRow,true);
+                    Row toRow = sheet.getRow(toRowIndex + num);
+                    Row row;
+                    if(toRowIndex >= fromRowEndIndex)
+                        row = copyRow(sheetNo,sheet.getRow(fromRowStartIndex + i),sheetNo,toRow,true);
+                    else
+                        row = copyRow(sheetNo,sheet.getRow(fromRowStartIndex + i + f),sheetNo,toRow,true);
                     temp.add(row);
                 }
                 // 使用传入的值覆盖${}
@@ -184,10 +252,13 @@ public class ExcelTemplate {
                 rows.addAll(temp);
                 n++;
             }
-        }
-        if(delRowTemp){
-            for(int i = fromRowStartIndex;i <= fromRowEndIndex;i++){
-                sheet.removeRow(sheet.getRow(i));
+            if(delRowTemp){
+                for(int i = fromRowStartIndex;i <= fromRowEndIndex;i++){
+                    if(toRowIndex >= fromRowEndIndex)
+                        sheet.removeRow(sheet.getRow(i));
+                    else
+                        sheet.removeRow(sheet.getRow(i + f));
+                }
             }
         }
         return rows;
@@ -202,8 +273,25 @@ public class ExcelTemplate {
      * @throws InvalidFormatException
      **/
     public int fillVariable(Map<String,String> fillValues) throws IOException, InvalidFormatException {
+        return fillVariable(0,fillValues);
+    }
+
+
+    /**
+     * 填充Excel当中的变量
+     *
+     * @param sheetNo 需要操作的Sheet的编号
+     * @param fillValues 填充的值
+     * @return int 受影响的变量数量
+     * @throws IOException
+     * @throws InvalidFormatException
+     **/
+    public int fillVariable(int sheetNo,Map<String,String> fillValues) throws IOException, InvalidFormatException {
         exception();
-        if(!examine() || fillValues == null
+        if(!examine()
+                || sheetNo < 0
+                || sheetNo > sheets.length - 1
+                || fillValues == null
                 || fillValues.size() == 0)
             return 0;
         // 验证${}格式
@@ -215,7 +303,7 @@ public class ExcelTemplate {
         ns.add(0);
         fillValues.forEach((k,v) ->{
             // 找到变量所在的单元格
-            Cell cell = find(s -> {
+            Cell cell = find(sheetNo,s -> {
                 if(s == null || "".equals(s))
                     return false;
                 Matcher matcher = pattern.matcher(s);
@@ -246,13 +334,13 @@ public class ExcelTemplate {
     /**
      * 根据断言predicate查找sheet当中符合条件的cell
      *
+     * @param sheetNo 需要操作的Sheet的编号
      * @param predicate 筛选的断言
      * @return List<Cell> 符合条件的Cell
      * */
-    private List<Cell> find(Predicate<String> predicate){
+    private List<Cell> find(int sheetNo,Predicate<String> predicate){
         Objects.requireNonNull(predicate);
-        if(cellList == null)
-            initCellList();
+        initCellList(sheetNo);
         return cellList.stream()
                 .map(c -> {
                     if(c != null && CellType.forInt(c.getCellType()) == CellType.STRING)
@@ -312,8 +400,10 @@ public class ExcelTemplate {
     }
 
     // 初始化cellList
-    private void initCellList(){
+    private void initCellList(int sheetNo){
         cellList = new ArrayList<>();
+        if(examine() && !initSheet(sheetNo))
+            return;
         int rn = sheet.getLastRowNum();
         for(int i = 0;i < rn;i++){
             Row row = sheet.getRow(i);
@@ -354,11 +444,16 @@ public class ExcelTemplate {
     /**
      * 复制Row到sheet中的另一个Row
      *
+     * @param fromSheetNo 复制的行所在的sheet
      * @param fromRow 需要复制的行
+     * @param toSheetNo 粘贴的行所在的sheet
      * @param toRow 粘贴的行
      * @param copyValueFlag 是否需要复制值
      */
-    private Row copyRow(Row fromRow, Row toRow, boolean copyValueFlag) {
+    private Row copyRow(int fromSheetNo,Row fromRow, int toSheetNo,Row toRow, boolean copyValueFlag) {
+        if(fromSheetNo < 0 || fromSheetNo > workbook.getNumberOfSheets()
+                || toSheetNo < 0 || toSheetNo > workbook.getNumberOfSheets())
+            return null;
         if (fromRow == null || toRow == null)
             return toRow;
         // 设置高度
@@ -368,9 +463,10 @@ public class ExcelTemplate {
             Cell newCell = toRow.createCell(c.getColumnIndex());
             copyCell(c, newCell, copyValueFlag);
         });
-        Sheet worksheet = fromRow.getSheet();
+        Sheet fromSheet = workbook.getSheetAt(fromSheetNo);
+        Sheet toSheet = workbook.getSheetAt(toSheetNo);
         // 遍历行当中的所有的合并区域
-        List<CellRangeAddress> crds = worksheet.getMergedRegions();
+        List<CellRangeAddress> crds = fromSheet.getMergedRegions();
         if(crds != null && crds.size() > 0){
             crds.forEach(crd -> {
                 // 如果当前合并区域的首行为复制的源行
@@ -382,7 +478,7 @@ public class ExcelTemplate {
                             crd.getFirstColumn(),
                             crd.getLastColumn());
                     // 添加合并区域
-                    worksheet.addMergedRegionUnsafe(newCellRangeAddress);
+                    toSheet.addMergedRegion(newCellRangeAddress);
                 }
             });
         }
@@ -449,29 +545,67 @@ public class ExcelTemplate {
     }
 
     /**
-     * 在插入之前移动行，避免新插入的行覆盖旧行
+     * 在插入之前移动并且创建行，避免新插入的行覆盖旧行
      *
+     * @param sheetNo 需要操作的Sheet的编号
      * @param startRow 移动的Row区间的起始位置
-     * @param endRow 移动的Row区间的结束位置
      * @param moveNum 移动的行数
      * */
-    private void shiftRows(int startRow,int endRow,int moveNum){
-        if(!examine())
+    private void shiftAndCreateRows(int sheetNo,int startRow,int moveNum){
+        if(!examine() || !initSheet(sheetNo)
+                || startRow > sheet.getLastRowNum())
             return;
-        //先获取原始的合并单元格address集合
-        List<CellRangeAddress> originMerged = sheet.getMergedRegions();
-        sheet.shiftRows(startRow,endRow,moveNum, true,false);
-        // 移动之后，被移动的区间的合并单元格会失效，需要重新合并
-        for(CellRangeAddress cd : originMerged) {
-            //插入行之后重新合并
-            if(cd.getFirstRow() > startRow + 1) {
-                int firstRow = cd.getFirstRow() + moveNum;
-                CellRangeAddress newCellRangeAddress = new CellRangeAddress(firstRow, (firstRow + (cd
-                        .getLastRow() - cd.getFirstRow())), cd.getFirstColumn(),
-                        cd.getLastColumn());
-                sheet.addMergedRegion(newCellRangeAddress);
+
+        List<Sheet> sheetList = new ArrayList<>(Arrays.asList(sheets));
+        // 复制当前需要操作的sheet到一个临时的sheet
+        Sheet tempSheet = workbook.cloneSheet(sheetList.indexOf(sheet));
+        // 获取临时sheet在workbook当中的索引
+        int tempSheetNo = workbook.getSheetIndex(tempSheet);
+        // 得到临时sheet的第一个row的索引
+        int firstRowNum = tempSheet.getFirstRowNum();
+        // 得到临时sheet的最后一个row的索引
+        int lastRowNum = tempSheet.getLastRowNum();
+        // 从临时sheet的最后一行开始创建行
+        for(int i = lastRowNum + 1;i <= lastRowNum + lastRowNum - firstRowNum + 1;i++){
+            tempSheet.createRow(i);
+            // 当定位到需要插入的行的位置的时候
+            // 连续创建moveNum数量的row
+            if((i - lastRowNum) == startRow){
+                for(int j = 0;j < moveNum;j++){
+                    tempSheet.createRow(i);
+                }
             }
         }
+        // 把sheet前部分的值复制给后半部分
+        // 中间需要插入的位置需要空出来
+        for(int i = lastRowNum + 1;i <= lastRowNum + lastRowNum - firstRowNum + 1;i++){
+            // 在到达插入位置之前的，直接复制
+            if((i - lastRowNum) < startRow){
+                copyRow(tempSheetNo,tempSheet.getRow(i - lastRowNum),
+                        tempSheetNo,tempSheet.getRow(i),true);
+                continue;
+            }
+            // 到达插入位置的时候，需要越过moveNum数量的row
+            else
+                copyRow(tempSheetNo,tempSheet.getRow(i - lastRowNum),tempSheetNo,
+                        tempSheet.getRow(i + moveNum),true);
+        }
+        // 把源sheet所有的row向下位移，腾出空间创建新的row
+        sheet.shiftRows(firstRowNum,lastRowNum,lastRowNum - firstRowNum + 1 + moveNum,true,false);
+        // 在腾出的空间当中创建新的行，这些新的行不会有任何的合并单元格，可以放心复制
+        for(int i = firstRowNum;i <= lastRowNum - firstRowNum + 1 + moveNum;i++){
+            sheet.createRow(i);
+        }
+        // 把原来的row删除掉
+        for(int i = lastRowNum + 1 + moveNum;i <= lastRowNum + lastRowNum - firstRowNum + 1;i++){
+            sheet.removeRow(sheet.getRow(i));
+        }
+        // 把临时sheet当中的后半部分的row复制给当前的sheet
+        for(int i = lastRowNum + 1;i <= tempSheet.getLastRowNum();i++){
+            copyRow(tempSheetNo,tempSheet.getRow(i),sheetNo,sheet.getRow(i - lastRowNum),true);
+        }
+        // 删除临时的sheet
+        workbook.removeSheetAt(2);
     }
 
     /**

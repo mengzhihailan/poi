@@ -381,7 +381,7 @@ public class ExcelTemplate {
 
     /**
      * 提取变量中的值，比如 formatParamCode("${1234}"),
-     * 会的到结果1234
+     * 会得到结果1234
      *
      * @param paramCode 需要提取的字符串
      * @return String

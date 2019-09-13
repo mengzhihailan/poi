@@ -153,9 +153,32 @@ public class ExcelTemplate {
      * @throws InvalidFormatException
      * */
     public int addRowByExist(int fromRowIndex, int toRowIndex,
-                             Map<Integer,LinkedList<String>> areaValues)
+                             LinkedHashMap<Integer,LinkedList<String>> areaValues)
             throws IOException, InvalidFormatException {
         return addRowByExist(0,fromRowIndex,fromRowIndex,toRowIndex,areaValues,true);
+    }
+
+    /**
+     * 使用一个已经存在的row作为模板，
+     * 从sheet[sheetNo]的toRowNum行开始插入这个row模板的副本
+     *
+     * @param sheetNo 需要操作的Sheet的编号
+     * @param fromRowStartIndex 模板row区域的开始索引
+     * @param fromRowEndIndex 模板row区域的结束索引
+     * @param toRowIndex 开始插入的row索引值
+     * @param copyNum 复制的数量
+     * @param delRowTemp 是否删除模板row区域
+     * @return int 插入的行数量
+     * @throws IOException
+     * @throws InvalidFormatException
+     * */
+    public int addRowByExist(int sheetNo,int fromRowStartIndex, int fromRowEndIndex,int toRowIndex, int copyNum,boolean delRowTemp)
+            throws IOException, InvalidFormatException {
+        LinkedHashMap<Integer, LinkedList<String>> map = new LinkedHashMap<>();
+        for(int i = 1;i <= copyNum;i++){
+            map.put(i,new LinkedList<>());
+        }
+        return addRowByExist(sheetNo,fromRowStartIndex,fromRowEndIndex,toRowIndex,map,delRowTemp);
     }
 
     /**
@@ -174,9 +197,9 @@ public class ExcelTemplate {
      * @throws InvalidFormatException
      * */
     public int addRowByExist(int fromRowStartIndex, int fromRowEndIndex,int toRowIndex,
-                             Map<Integer,LinkedList<String>> areaValues, boolean delRowTemp)
+                             LinkedHashMap<Integer,LinkedList<String>> areaValues, boolean delRowTemp)
             throws IOException, InvalidFormatException {
-        return addRowByExist(0,fromRowStartIndex,fromRowEndIndex,toRowIndex,areaValues,true);
+        return addRowByExist(0,fromRowStartIndex,fromRowEndIndex,toRowIndex,areaValues,delRowTemp);
     }
 
     /**
@@ -194,7 +217,7 @@ public class ExcelTemplate {
      * @throws InvalidFormatException
      * */
     public int addRowByExist(int sheetNo,int fromRowIndex, int toRowIndex,
-                             Map<Integer,LinkedList<String>> areaValues)
+                             LinkedHashMap<Integer,LinkedList<String>> areaValues)
             throws IOException, InvalidFormatException {
         return addRowByExist(sheetNo,fromRowIndex,fromRowIndex,toRowIndex,areaValues,true);
     }
@@ -202,7 +225,7 @@ public class ExcelTemplate {
     /**
      * 使用一个已经存在的行区域作为模板，
      * 从sheet的toRowNum行开始插入这段行区域,
-     * areaValue会从左至右，从上至下的替换板row区域
+     * areaValue会从左至右，从上至下的替换掉row区域
      * 中值为 ${} 的单元格的值
      *
      * @param sheetNo 需要操作的Sheet的编号
@@ -216,7 +239,7 @@ public class ExcelTemplate {
      * @throws InvalidFormatException
      * */
     public int addRowByExist(int sheetNo,int fromRowStartIndex, int fromRowEndIndex,int toRowIndex,
-                             Map<Integer,LinkedList<String>> areaValues, boolean delRowTemp)
+                             LinkedHashMap<Integer,LinkedList<String>> areaValues, boolean delRowTemp)
             throws InvalidFormatException, IOException {
         exception();
         if(!examine()
@@ -629,7 +652,7 @@ public class ExcelTemplate {
     /**
      * 返回Excel的字节数组
      *
-     * @return OutputStream
+     * @return byte[]
      */
     public byte[] getBytes(){
         if(!examine())

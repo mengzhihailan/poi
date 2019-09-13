@@ -3,6 +3,8 @@
   <component name="ChangeListManager">
     <list default="true" id="e519e10d-d887-4b04-9058-c53f65ed35d8" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/poi/License.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/poi/pdf/PdfUtil.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/poi/pdf/PdfUtil.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/export/ExcelTemplate.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/export/ExcelTemplate.java" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -39,6 +41,12 @@
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
     <property name="last_opened_file_path" value="E:/IdeaWorkSpace/lvs" />
+    <property name="node.js.detected.package.eslint" value="true" />
+    <property name="node.js.detected.package.tslint" value="true" />
+    <property name="node.js.path.for.package.eslint" value="project" />
+    <property name="node.js.path.for.package.tslint" value="project" />
+    <property name="node.js.selected.package.eslint" value="(autodetect)" />
+    <property name="node.js.selected.package.tslint" value="(autodetect)" />
     <property name="project.structure.last.edited" value="Modules" />
     <property name="project.structure.proportion" value="0.0" />
     <property name="project.structure.side.proportion" value="0.2" />
@@ -62,7 +70,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Application.Main">
     <configuration name="ExcelToHtml" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="html.ExcelToHtml" />
       <module name="poi" />
@@ -76,8 +84,22 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="Main" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="export.Main" />
+      <module name="poi" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="export.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Application.Main" />
         <item itemvalue="Application.ExcelToHtml" />
       </list>
     </recent_temporary>
@@ -94,7 +116,7 @@
       <updated>1567500556188</updated>
       <workItem from="1568266882695" duration="495000" />
       <workItem from="1568297500617" duration="151000" />
-      <workItem from="1568329352927" duration="1244000" />
+      <workItem from="1568329352927" duration="9415000" />
     </task>
     <servers />
   </component>

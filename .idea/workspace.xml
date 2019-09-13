@@ -3,8 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="e519e10d-d887-4b04-9058-c53f65ed35d8" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/production/poi/License.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/production/poi/pdf/PdfUtil.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/poi/pdf/PdfUtil.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/export/ExcelTemplate.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/export/ExcelTemplate.java" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -116,7 +114,8 @@
       <updated>1567500556188</updated>
       <workItem from="1568266882695" duration="495000" />
       <workItem from="1568297500617" duration="151000" />
-      <workItem from="1568329352927" duration="9415000" />
+      <workItem from="1568329352927" duration="10421000" />
+      <workItem from="1568343002429" duration="58000" />
     </task>
     <servers />
   </component>

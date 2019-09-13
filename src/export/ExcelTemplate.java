@@ -626,7 +626,7 @@ public class ExcelTemplate {
             copyRow(tempSheetNo,tempSheet.getRow(i),sheetNo,sheet.getRow(i - lastRowNum),true);
         }
         // 删除临时的sheet
-        workbook.removeSheetAt(2);
+        workbook.removeSheetAt(tempSheetNo);
     }
 
     /**

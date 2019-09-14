@@ -3,6 +3,8 @@
   <component name="ChangeListManager">
     <list default="true" id="e519e10d-d887-4b04-9058-c53f65ed35d8" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/poi/export/ExcelTemplate.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/poi/export/ExcelTemplate.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/poi/export/Main.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/export/ExcelTemplate.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/export/ExcelTemplate.java" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -68,7 +70,20 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Application.Main">
+  <component name="RunManager" selected="Application.ExcelTemplate">
+    <configuration name="ExcelTemplate" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="export.ExcelTemplate" />
+      <module name="poi" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="export.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="ExcelToHtml" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="html.ExcelToHtml" />
       <module name="poi" />
@@ -97,6 +112,7 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Application.ExcelTemplate" />
         <item itemvalue="Application.Main" />
         <item itemvalue="Application.ExcelToHtml" />
       </list>
@@ -117,6 +133,7 @@
       <workItem from="1568329352927" duration="10421000" />
       <workItem from="1568343002429" duration="124000" />
       <workItem from="1568384072029" duration="201000" />
+      <workItem from="1568426998083" duration="1892000" />
     </task>
     <servers />
   </component>

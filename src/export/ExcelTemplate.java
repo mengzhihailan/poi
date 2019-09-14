@@ -586,44 +586,22 @@ public class ExcelTemplate {
         int firstRowNum = tempSheet.getFirstRowNum();
         // 得到临时sheet的最后一个row的索引
         int lastRowNum = tempSheet.getLastRowNum();
-        // 从临时sheet的最后一行开始创建行
-        for(int i = lastRowNum + 1;i <= lastRowNum + lastRowNum - firstRowNum + 1;i++){
-            tempSheet.createRow(i);
-            // 当定位到需要插入的行的位置的时候
-            // 连续创建moveNum数量的row
-            if((i - lastRowNum) == startRow){
-                for(int j = 0;j < moveNum;j++){
-                    tempSheet.createRow(i);
-                }
-            }
-        }
-        // 把sheet前部分的值复制给后半部分
-        // 中间需要插入的位置需要空出来
-        for(int i = lastRowNum + 1;i <= lastRowNum + lastRowNum - firstRowNum + 1;i++){
-            // 在到达插入位置之前的，直接复制
-            if((i - lastRowNum) < startRow){
-                copyRow(tempSheetNo,tempSheet.getRow(i - lastRowNum),
-                        tempSheetNo,tempSheet.getRow(i),true);
-                continue;
-            }
-            // 到达插入位置的时候，需要越过moveNum数量的row
-            else
-                copyRow(tempSheetNo,tempSheet.getRow(i - lastRowNum),tempSheetNo,
-                        tempSheet.getRow(i + moveNum),true);
-        }
-        // 把源sheet所有的row向下位移，腾出空间创建新的row
-        sheet.shiftRows(firstRowNum,lastRowNum,lastRowNum - firstRowNum + 1 + moveNum,true,false);
-        // 在腾出的空间当中创建新的行，这些新的行不会有任何的合并单元格，可以放心复制
-        for(int i = firstRowNum;i <= lastRowNum - firstRowNum + 1 + moveNum;i++){
+        int size;
+        // 当前操作的sheet整体下移
+        sheet.shiftRows(firstRowNum,lastRowNum,
+                size = (lastRowNum - firstRowNum + moveNum + 1),true,false);
+        // 在腾出的空间上添加新的行，这些新的行不会具有任何的合并单元格，所以可以使用copyRow复制
+        // 添加新的行之后删除旧的行
+        for(int i= firstRowNum;i < size;i++){
             sheet.createRow(i);
         }
-        // 把原来的row删除掉
-        for(int i = lastRowNum + 1 + moveNum;i <= lastRowNum + lastRowNum - firstRowNum + 1;i++){
-            sheet.removeRow(sheet.getRow(i));
-        }
-        // 把临时sheet当中的后半部分的row复制给当前的sheet
-        for(int i = lastRowNum + 1;i <= tempSheet.getLastRowNum();i++){
-            copyRow(tempSheetNo,tempSheet.getRow(i),sheetNo,sheet.getRow(i - lastRowNum),true);
+        for(int i= firstRowNum;i < lastRowNum - firstRowNum + 1;i++){
+            if(i < startRow)
+                copyRow(tempSheetNo,tempSheet.getRow(i),sheetNo,sheet.getRow(i),true);
+            // 到达需要插入的索引的位置，需要留出moveNum空间的行
+            else
+                copyRow(tempSheetNo,tempSheet.getRow(i),sheetNo,sheet.getRow(i + moveNum),true);
+            sheet.removeRow(sheet.getRow(i + size));
         }
         // 删除临时的sheet
         workbook.removeSheetAt(tempSheetNo);

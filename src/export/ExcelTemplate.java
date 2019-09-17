@@ -365,13 +365,13 @@ public class ExcelTemplate {
         initCellList(sheetNo);
         return cellList.stream()
                 .map(c -> {
-                    if(c != null && CellType.forInt(c.getCellType()) == CellType.STRING)
+                    if(c != null && c.getCellTypeEnum() == CellType.STRING)
                         return c.getStringCellValue();
                     return null;
                 })// Cell流转换为String流
                 .filter(predicate)
                 .map(s -> cellList.stream().filter(c -> {
-                    if(c != null && CellType.forInt(c.getCellType()) == CellType.STRING
+                    if(c != null && c.getCellTypeEnum() == CellType.STRING
                             && s.equals(c.getStringCellValue()))
                         return true;
                     return false;
@@ -451,7 +451,7 @@ public class ExcelTemplate {
             return;
         rows.forEach(r -> {
             r.forEach(c -> {
-                if(CellType.forInt(c.getCellType()) == CellType.STRING && "${}".equals(c.getStringCellValue())){
+                if(c.getCellTypeEnum() == CellType.STRING && "${}".equals(c.getStringCellValue())){
                     if(valueList == null)
                         return;
                     String value = valueList.stream().findFirst().orElse(null);

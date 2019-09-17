@@ -598,10 +598,12 @@ public class ExcelTemplate {
         for(int i= firstRowNum;i < lastRowNum - firstRowNum + 1;i++){
             if(i < startRow)
                 copyRow(tempSheetNo,tempSheet.getRow(i),sheetNo,sheet.getRow(i),true);
-            // 到达需要插入的索引的位置，需要留出moveNum空间的行
+                // 到达需要插入的索引的位置，需要留出moveNum空间的行
             else
                 copyRow(tempSheetNo,tempSheet.getRow(i),sheetNo,sheet.getRow(i + moveNum),true);
-            sheet.removeRow(sheet.getRow(i + size));
+            Row row = sheet.getRow(i + size);
+            if(row != null)
+                sheet.removeRow(row);
         }
         // 删除临时的sheet
         workbook.removeSheetAt(tempSheetNo);

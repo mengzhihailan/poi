@@ -275,10 +275,11 @@ public class ExcelTemplate {
             }
             if(delRowTemp){
                 for(int i = fromRowStartIndex;i <= fromRowEndIndex;i++){
-                    if(toRowIndex >= fromRowEndIndex)
-                        sheet.removeRow(sheet.getRow(i));
-                    else
-                        sheet.removeRow(sheet.getRow(i + f));
+                    Row row;
+                    if(toRowIndex >= fromRowEndIndex && (row = sheet.getRow(i)) != null)
+                        sheet.removeRow(row);
+                    else if((row = sheet.getRow(i + f)) != null)
+                        sheet.removeRow(row);
                 }
             }
         }

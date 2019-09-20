@@ -76,7 +76,7 @@ public class ExcelToHtml {
             // 将内容存放到html中
             File html = new File(htmlPath);
             if(html.exists()){
-                html.mkdirs();
+                return excelName + ".html";
             }
             // 写入到指定的文件
             outputStream = new FileOutputStream(html);
@@ -295,9 +295,9 @@ public class ExcelToHtml {
             if (wb instanceof XSSFWorkbook) {
 
                 XSSFFont xf = ((XSSFCellStyle) cellStyle).getFont();
-                short boldWeight = xf.getBoldweight();
                 sb.append("style='");
-                sb.append("font-weight:" + boldWeight + ";"); // 字体加粗
+                if(xf.getBold())
+                    sb.append("font-weight:bold;"); // 字体加粗
                 sb.append("font-size: " + xf.getFontHeight() / 2 + "%;"); // 字体大小
                 int columnWidth = sheet.getColumnWidth(cell.getColumnIndex()) ;
                 sb.append("width:" + columnWidth + "px;");
@@ -318,12 +318,12 @@ public class ExcelToHtml {
             }else if(wb instanceof HSSFWorkbook){
 
                 HSSFFont hf = ((HSSFCellStyle) cellStyle).getFont(wb);
-                short boldWeight = hf.getBoldweight();
                 short fontColor = hf.getColor();
                 sb.append("style='");
                 HSSFPalette palette = ((HSSFWorkbook) wb).getCustomPalette(); // 类HSSFPalette用于求的颜色的国际标准形式
                 HSSFColor hc = palette.getColor(fontColor);
-                sb.append("font-weight:" + boldWeight + ";"); // 字体加粗
+                if(hf.getBold())
+                    sb.append("font-weight:bold;"); // 字体加粗
                 sb.append("font-size: " + hf.getFontHeight() / 2 + "%;"); // 字体大小
                 String fontColorStr = convertToStardColor(hc);
                 if (fontColorStr != null && !"".equals(fontColorStr.trim())) {
@@ -354,19 +354,9 @@ public class ExcelToHtml {
      */
     private String convertAlignToHtml(short alignment) {
         String align = "left";
-        switch (alignment) {
-            case CellStyle.ALIGN_LEFT:
-                align = "left";
-                break;
-            case CellStyle.ALIGN_CENTER:
-                align = "center";
-                break;
-            case CellStyle.ALIGN_RIGHT:
-                align = "right";
-                break;
-            default:
-                break;
-        }
+        if(alignment == HorizontalAlignment.LEFT.getCode()){ align = "left";}
+        else if(alignment == HorizontalAlignment.CENTER.getCode()){ align = "center";}
+        else if(alignment == HorizontalAlignment.RIGHT.getCode()){ align = "right";}
         return align;
     }
 
@@ -378,19 +368,9 @@ public class ExcelToHtml {
     private String convertVerticalAlignToHtml(short verticalAlignment) {
 
         String valign = "middle";
-        switch (verticalAlignment) {
-            case CellStyle.VERTICAL_BOTTOM:
-                valign = "bottom";
-                break;
-            case CellStyle.VERTICAL_CENTER:
-                valign = "center";
-                break;
-            case CellStyle.VERTICAL_TOP:
-                valign = "top";
-                break;
-            default:
-                break;
-        }
+        if(verticalAlignment == VerticalAlignment.BOTTOM.getCode()){valign = "bottom";}
+        else if(verticalAlignment == VerticalAlignment.CENTER.getCode()){valign = "center";}
+        else if(verticalAlignment == VerticalAlignment.TOP.getCode()){valign = "top";}
         return valign;
     }
 
@@ -515,5 +495,11 @@ public class ExcelToHtml {
     }
 
     public static void main(String[] args) {
+        ExcelToHtml excelToHtml = new ExcelToHtml();
+        try {
+            System.out.println(excelToHtml.excelToHtml("F:\\","xlsx",".xlsx","F:\\测试"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

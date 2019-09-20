@@ -231,8 +231,8 @@ public class ExcelToHtml {
     private String getCellValue(Cell cell) {
 
         String result = new String();
-        switch (cell.getCellType()) {
-            case Cell.CELL_TYPE_NUMERIC:// 数字类型
+        switch (cell.getCellTypeEnum()) {
+            case NUMERIC:// 数字类型
                 if (HSSFDateUtil.isCellDateFormatted(cell)) {// 处理日期格式、时间格式
                     SimpleDateFormat sdf = null;
                     if (cell.getCellStyle().getDataFormat() == HSSFDataFormat.getBuiltinFormat("h:mm")) {
@@ -263,10 +263,10 @@ public class ExcelToHtml {
                     result = format.format(value);
                 }
                 break;
-            case Cell.CELL_TYPE_STRING:// String类型
+            case STRING:// String类型
                 result = cell.getRichStringCellValue().toString();
                 break;
-            case Cell.CELL_TYPE_BLANK:
+            case BLANK:
                 result = "";
                 break;
             default:
@@ -287,9 +287,9 @@ public class ExcelToHtml {
 
         CellStyle cellStyle = cell.getCellStyle();
         if (cellStyle != null) {
-            short alignment = cellStyle.getAlignment();
+            short alignment = cellStyle.getAlignmentEnum().getCode();
             sb.append("align='" + convertAlignToHtml(alignment) + "' ");//单元格内容的水平对齐方式
-            short verticalAlignment = cellStyle.getVerticalAlignment();
+            short verticalAlignment = cellStyle.getVerticalAlignmentEnum().getCode();
             sb.append("valign='"+ convertVerticalAlignToHtml(verticalAlignment)+ "' ");//单元格中内容的垂直排列方式
 
             if (wb instanceof XSSFWorkbook) {
@@ -310,10 +310,11 @@ public class ExcelToHtml {
                 if (bgColor != null && !"".equals(bgColor)) {
                     sb.append("background-color:#" + bgColor.getARGBHex().substring(2) + ";"); // 背景颜色
                 }
-                sb.append(getBorderStyle(0,cellStyle.getBorderTop(), ((XSSFCellStyle) cellStyle).getTopBorderXSSFColor()));
-                sb.append(getBorderStyle(1,cellStyle.getBorderRight(), ((XSSFCellStyle) cellStyle).getRightBorderXSSFColor()));
-                sb.append(getBorderStyle(2,cellStyle.getBorderBottom(), ((XSSFCellStyle) cellStyle).getBottomBorderXSSFColor()));
-                sb.append(getBorderStyle(3,cellStyle.getBorderLeft(), ((XSSFCellStyle) cellStyle).getLeftBorderXSSFColor()));
+                BorderStyle border = cellStyle.getBorderBottomEnum();
+                sb.append(getBorderStyle(0,border.getCode(), ((XSSFCellStyle) cellStyle).getTopBorderXSSFColor()));
+                sb.append(getBorderStyle(1,border.getCode(), ((XSSFCellStyle) cellStyle).getRightBorderXSSFColor()));
+                sb.append(getBorderStyle(2,border.getCode(), ((XSSFCellStyle) cellStyle).getBottomBorderXSSFColor()));
+                sb.append(getBorderStyle(3,border.getCode(), ((XSSFCellStyle) cellStyle).getLeftBorderXSSFColor()));
 
             }else if(wb instanceof HSSFWorkbook){
 
@@ -464,17 +465,17 @@ public class ExcelToHtml {
                     XSSFCell cell = row.createCell((short) p);
                     String data = ardata.get(p).toString();
                     if(data.startsWith("=")){
-                        cell.setCellType(Cell.CELL_TYPE_STRING);
+                        cell.setCellType(CellType.STRING);
                         data=data.replaceAll("\"", "");
                         data=data.replaceAll("=", "");
                         cell.setCellValue(data);
                     }else if(data.startsWith("\"")){
                         data=data.replaceAll("\"", "");
-                        cell.setCellType(Cell.CELL_TYPE_STRING);
+                        cell.setCellType(CellType.STRING);
                         cell.setCellValue(data);
                     }else{
                         data=data.replaceAll("\"", "");
-                        cell.setCellType(Cell.CELL_TYPE_NUMERIC);
+                        cell.setCellType(CellType.NUMERIC);
                         cell.setCellValue(data);
                     }
                 }

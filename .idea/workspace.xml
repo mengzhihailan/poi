@@ -3,13 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="e519e10d-d887-4b04-9058-c53f65ed35d8" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/poi-3.15.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/poi-ooxml-3.15.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/poi-ooxml-schemas-3.15.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/poi-scratchpad-3.15.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/production/poi/export/ExcelTemplate.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/poi/export/ExcelTemplate.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/out/production/poi/html/ExcelToHtml.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/poi/html/ExcelToHtml.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/poi.iml" beforeDir="false" afterPath="$PROJECT_DIR$/poi.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/html/ExcelToHtml.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/html/ExcelToHtml.java" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -45,7 +39,7 @@
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/lib/xmlbeans-2.6.0.jar!/" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -145,7 +139,8 @@
       <workItem from="1568717931734" duration="545000" />
       <workItem from="1568719083869" duration="806000" />
       <workItem from="1568868087431" duration="1982000" />
-      <workItem from="1568946625840" duration="2468000" />
+      <workItem from="1568946625840" duration="2853000" />
+      <workItem from="1568949887517" duration="1613000" />
     </task>
     <servers />
   </component>

@@ -649,8 +649,7 @@ public class ExcelTemplate {
             return false;
         if(examine() ^ ((ExcelTemplate)o).examine())
             return false;
-        String oPath = ((ExcelTemplate)o).path;
-        return Objects.equals(path,oPath);
+        return Objects.equals(path,((ExcelTemplate)o).path);
     }
 
     @Override

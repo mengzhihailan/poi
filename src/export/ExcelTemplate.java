@@ -517,15 +517,12 @@ public class ExcelTemplate {
     private void copyCell(Cell srcCell, Cell distCell, boolean copyValueFlag) {
         if (srcCell == null || distCell == null)
             return;
-        CellStyle newStyle = workbook.createCellStyle();
+
         // 获取源单元格的样式
         CellStyle srcStyle = srcCell.getCellStyle();
-        // 粘贴样式
-        newStyle.cloneStyleFrom(srcStyle);
-        // 复制字体
-        newStyle.setFont(workbook.getFontAt(srcStyle.getFontIndex()));
         // 复制样式
-        distCell.setCellStyle(newStyle);
+        distCell.setCellStyle(srcStyle);
+
         // 复制评论
         if(srcCell.getCellComment() != null) {
             distCell.setCellComment(srcCell.getCellComment());
@@ -617,16 +614,13 @@ public class ExcelTemplate {
      * @throws IOException
      * @throws InvalidFormatException
      */
-    public void save(String path) throws IOException, InvalidFormatException {
+    public void save(String path) throws
+            IOException, InvalidFormatException {
         exception();
         if(!examine())
             return;
         try (FileOutputStream fos = new FileOutputStream(path)){
             workbook.write(fos) ;
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
@@ -653,9 +647,10 @@ public class ExcelTemplate {
             return true;
         if(!(o instanceof ExcelTemplate))
             return false;
-        if(!(examine() ^ ((ExcelTemplate)o).examine()))
+        if(examine() ^ ((ExcelTemplate)o).examine())
             return false;
-        return path == ((ExcelTemplate)o).path;
+        String oPath = ((ExcelTemplate)o).path;
+        return Objects.equals(path,oPath);
     }
 
     @Override

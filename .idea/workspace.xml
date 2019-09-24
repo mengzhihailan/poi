@@ -3,6 +3,8 @@
   <component name="ChangeListManager">
     <list default="true" id="e519e10d-d887-4b04-9058-c53f65ed35d8" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/poi/export/ExcelTemplate.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/poi/export/ExcelTemplate.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/export/ExcelTemplate.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/export/ExcelTemplate.java" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -145,6 +147,7 @@
       <workItem from="1569081327179" duration="135000" />
       <workItem from="1569119853567" duration="2662000" />
       <workItem from="1569295232458" duration="5000" />
+      <workItem from="1569330778867" duration="883000" />
     </task>
     <servers />
   </component>

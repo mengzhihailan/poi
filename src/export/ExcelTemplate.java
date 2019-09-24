@@ -500,7 +500,7 @@ public class ExcelTemplate {
                             crd.getFirstColumn(),
                             crd.getLastColumn());
                     // 添加合并区域
-                    toSheet.addMergedRegion(newCellRangeAddress);
+                    safeMergedRegion(toSheetNo,newCellRangeAddress);
                 }
             });
         }
@@ -552,6 +552,162 @@ public class ExcelTemplate {
         }
     }
 
+    /**
+     * 合并单元格区域，本方法是安全的操作，在出现合并冲突的时候，
+     * 分割合并区域，然后最大限度的合并冲突区域
+     *
+     * 使用此方法而不是采用addMergedRegion()和
+     * addMergedRegionUnsafe()合并单元格区间，
+     * 因为此方法会自行解决合并区间冲突，避免报错
+     * 或者生成无法打开的excel
+     *
+     * @param sheetNo 需要操作的Sheet的编号
+     * @param firstRow 开始行
+     * @param lastRow 结束行
+     * @param firstCol 开始列
+     * @param lastCol 结束列
+     * */
+    public void mergedRegion(int sheetNo,int firstRow, int lastRow, int firstCol, int lastCol){
+        CellRangeAddress address = new CellRangeAddress(firstRow,lastRow,firstCol,lastCol);
+        safeMergedRegion(sheetNo,address);
+    }
+
+    /**
+     * 合并单元格区域，本方法是安全的操作，在出现合并冲突的时候，
+     * 分割合并区域，然后最大限度的合并冲突区域
+     *
+     * @param sheetNo 需要操作的Sheet的编号
+     * @param rangeAddress 合并的单元格区域
+     * */
+    private void safeMergedRegion(int sheetNo,CellRangeAddress rangeAddress){
+        if(!examine() || !initSheet(sheetNo) || rangeAddress == null)
+            return;
+        // 获取所有合并的区域
+        List<CellRangeAddress> crds = sheet.getMergedRegions();
+        if(crds == null)
+            return;
+        // 获取描述单元格区域的坐标，
+        // 在首行和首列，坐标等于行编号，
+        // 在末行和末列，坐标等于行编号加1
+        int firstRow = rangeAddress.getFirstRow();
+        int lastRow = rangeAddress.getLastRow() + 1;
+        int firstColumn = rangeAddress.getFirstColumn();
+        int lastColumn = rangeAddress.getLastColumn() + 1;
+        // 查找冲突的单元格区域
+        CellRangeAddress conflictRange = crds.stream()
+                .filter(crd -> {
+                    // 获取单元格区域的坐标
+                    int cFirstRow = crd.getFirstRow();
+                    int cLastRow = crd.getLastRow() + 1;
+                    int cFirstColumn = crd.getFirstColumn();
+                    int cLastColumn = crd.getLastColumn()  + 1;
+                    // 每个合并单元格区域看成一个长方形
+                    // 计算两个长方形中心的X坐标的距离
+                    float xDistance = (float)(lastColumn + firstColumn)/2
+                            - (float)(cLastColumn + cFirstColumn)/2;
+                    // 每个合并单元格区域看成一个长方形
+                    // 计算两个长方形中心的Y坐标的距离
+                    float yDistance = (float)(lastRow + firstRow)/2
+                            - (float)(cLastRow + cFirstRow)/2;
+                    // 获取距离的绝对值
+                    xDistance = xDistance >= 0 ? xDistance : -xDistance;
+                    yDistance = yDistance >= 0 ? yDistance : -yDistance;
+                    // 如果两个合并区域相交了，返回true
+                    if(xDistance < ((float)(lastColumn - firstColumn)/2 + (float)(cLastColumn - cFirstColumn)/2)
+                            && yDistance < ((float)(lastRow - firstRow)/2 + (float)(cLastRow - cFirstRow)/2))
+                        return true;
+                    return false;
+                })
+                .findFirst()
+                .orElse(null);
+        // 如果没有查找到冲突的区域，直接合并
+        if(conflictRange == null){
+            sheet.addMergedRegion(rangeAddress);
+        }
+        // 如果合并区域冲突了，分离新增的合并区域
+        List<CellRangeAddress> splitRangeAddr = splitRangeAddress(conflictRange,rangeAddress);
+        if(splitRangeAddr != null)
+            splitRangeAddr.forEach(sra -> safeMergedRegion(sheetNo,sra));
+    }
+
+    /**
+     * 如果插入的目标合并区域target和sheet中已存在的合并区域source冲突，
+     * 把target分割成多个合并区域，这些合并区域都不会和source冲突
+     *
+     * @param source 已经存在的合并单元格区域
+     * @param target 新增的合并单元格区域
+     * @return target分离之后的合并单元格列表
+     * */
+    private List<CellRangeAddress> splitRangeAddress(CellRangeAddress source,CellRangeAddress target){
+        List<CellRangeAddress> splitRangeAddr = null;
+        if(source == null || target == null)
+            return null;
+        // 获取source区域的坐标
+        int sFirstRow = source.getFirstRow();
+        int sLastRow = source.getLastRow() + 1;
+        int sFirstColumn = source.getFirstColumn();
+        int sLastColumn = source.getLastColumn() + 1;
+        // 获取target区域的坐标
+        int tFirstRow = target.getFirstRow();
+        int tLastRow = target.getLastRow() + 1;
+        int tFirstColumn = target.getFirstColumn();
+        int tLastColumn = target.getLastColumn() + 1;
+
+        while(true){
+            if(splitRangeAddr == null)
+                splitRangeAddr = new ArrayList<>();
+            // 如果target被切分得无法越过source合并区域，退出循环
+            if(tFirstRow >= sFirstRow && tLastRow <= sLastRow
+                    && tFirstColumn >= sFirstColumn && tLastColumn <= sLastColumn)
+                break;
+            // 只考虑Y坐标，当source的最大Y坐标sLastRow在开区间(tFirstRow,tLastRow)
+            if(sLastRow > tFirstRow && sLastRow < tLastRow){
+                CellRangeAddress address =
+                        new CellRangeAddress(sLastRow,tLastRow - 1,tFirstColumn,tLastColumn - 1);
+                tLastRow = sLastRow;
+                if(!examineIsCelll(address))
+                    splitRangeAddr.add(address);
+            }
+            // 只考虑Y坐标，当source的最小Y坐标sFirstRow在开区间(tFirstRow,tLastRow)
+            if(sFirstRow > tFirstRow && sFirstRow < tLastRow){
+                CellRangeAddress address =
+                        new CellRangeAddress(tFirstRow,sFirstRow - 1,tFirstColumn,tLastColumn - 1);
+                tFirstRow = sFirstRow;
+                if(!examineIsCelll(address))
+                    splitRangeAddr.add(address);
+            }
+            // 只考虑X坐标，当source的最小X坐标sFirstColumn在开区间(tFirstColumn,tLastColumn)
+            if(sFirstColumn > tFirstColumn && sFirstColumn < tLastColumn){
+                CellRangeAddress address =
+                        new CellRangeAddress(tFirstRow,tLastRow - 1,tFirstColumn,sFirstColumn - 1);
+                tFirstColumn = sFirstColumn;
+                if(!examineIsCelll(address))
+                    splitRangeAddr.add(address);
+            }
+            // 只考虑X坐标，当source的最大X坐标sLastColumn在开区间(tFirstColumn,tLastColumn)
+            if(sLastColumn > tFirstColumn && sLastColumn < tLastColumn){
+                CellRangeAddress address =
+                        new CellRangeAddress(tFirstRow,tLastRow - 1,sLastColumn,tLastColumn - 1);
+                tLastColumn = sLastColumn;
+                if(!examineIsCelll(address))
+                    splitRangeAddr.add(address);
+            }
+        }
+        return splitRangeAddr;
+    }
+
+    private boolean examineIsCelll(CellRangeAddress address){
+        if(address == null)
+            return false;
+        int firstRow = address.getFirstRow();
+        int lastRow = address.getLastRow();
+        int firstColumn = address.getFirstColumn();
+        int lastColumn = address.getLastColumn();
+        if(firstColumn == lastColumn && firstColumn == lastColumn)
+            return true;
+        return false;
+    }
+
     private void exception() throws InvalidFormatException, IOException {
         if(ex != null){
             if(ex instanceof InvalidFormatException)
@@ -564,13 +720,24 @@ public class ExcelTemplate {
     }
 
     /**
-     * 在插入之前移动并且创建行，避免新插入的行覆盖旧行
+     * 把sheet[sheetNo]当中所有的行从startRow位置开始，
+     * 全部下移moveNum数量的位置，并且在腾出的空间当中创建新行
+     *
+     * 应该使用本方法而不是采用sheet.shiftRows()和sheet.createRow()，
+     * 主要是因为插入一段行的时候会进行如下步骤：
+     * 第一：使用shiftRows腾出空间
+     * 第二：使用createRow(position)从position开始创建行
+     * 但是这样，后面下移的行的合并单元格会部分消失，
+     * 并且新创建的行的合并单元格并没有消失，这是因为sheet当中的
+     * 大于position的CellRangeAddress并没有跟着下移。
+     * 而使用本方法下移并且在中间自动插入行，新插入的行不会含有任何合并单元格，
+     * 并且原来的合并单元格也不会消失。
      *
      * @param sheetNo 需要操作的Sheet的编号
      * @param startRow 移动的Row区间的起始位置
      * @param moveNum 移动的行数
      * */
-    private void shiftAndCreateRows(int sheetNo,int startRow,int moveNum){
+    public void shiftAndCreateRows(int sheetNo,int startRow,int moveNum){
         if(!examine() || !initSheet(sheetNo)
                 || startRow > sheet.getLastRowNum())
             return;
@@ -639,6 +806,17 @@ public class ExcelTemplate {
             e.printStackTrace();
         }
         return null;
+    }
+
+    /**
+     * 返回Workbook
+     *
+     * @return Workbook
+     * */
+    public Workbook getWorkbook(){
+        if(!examine())
+            return null;
+        return workbook;
     }
 
     @Override

@@ -2,7 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="e519e10d-d887-4b04-9058-c53f65ed35d8" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/src/export/Test.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/poi/export/ExcelTemplate.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/poi/export/ExcelTemplate.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/export/ExcelTemplate.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/export/ExcelTemplate.java" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -18,6 +20,7 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Class" />
+        <option value="Interface" />
       </list>
     </option>
   </component>
@@ -68,7 +71,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Application.ExcelTemplate">
+  <component name="RunManager" selected="Application.Test">
     <configuration name="ExcelTemplate" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="export.ExcelTemplate" />
       <module name="poi" />
@@ -108,8 +111,22 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="Test" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="export.Test" />
+      <module name="poi" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="export.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Application.Test" />
         <item itemvalue="Application.ExcelTemplate" />
         <item itemvalue="Application.ExcelToHtml" />
         <item itemvalue="Application.Main" />
@@ -147,7 +164,8 @@
       <workItem from="1569119853567" duration="2662000" />
       <workItem from="1569295232458" duration="5000" />
       <workItem from="1569330778867" duration="1706000" />
-      <workItem from="1569492956250" duration="29000" />
+      <workItem from="1569492956250" duration="279000" />
+      <workItem from="1569500012179" duration="3796000" />
     </task>
     <servers />
   </component>

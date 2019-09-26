@@ -243,6 +243,22 @@ public class ExcelTemplate {
         return rows.size();
     }
 
+    /**
+     * 使用一个已经存在的列区域作为模板，
+     * 从sheet的toColumnIndex行开始插入这段列区域,
+     * areaValue会从上至下，从左至右的替换掉列区域
+     * 中值为 ${} 的单元格的值
+     *
+     * @param sheetNo 需要操作的Sheet的编号
+     * @param fromColumnStartIndex 模板row区域的开始索引
+     * @param fromColumnEndIndex 模板row区域的结束索引
+     * @param toColumnIndex 开始插入的row索引
+     * @param areaValues 替换模板row区域的${}值
+     * @param delColumnTemp 是否删除模板row区域
+     * @return int 插入的列数量
+     * @throws IOException
+     * @throws InvalidFormatException
+     * */
     public int addColumnByExist(int sheetNo,int fromColumnStartIndex, int fromColumnEndIndex,int toColumnIndex,
                                 LinkedHashMap<Integer,LinkedList<String>> areaValues, boolean delColumnTemp)
             throws InvalidFormatException, IOException{
@@ -371,6 +387,32 @@ public class ExcelTemplate {
             }
         }
         return n.get(0);
+    }
+
+    /**
+     * 使用一个已经存在的列区域作为模板，
+     * 从sheet的toColumnIndex行开始插入这段列区域,
+     * areaValue会从上至下，从左至右的替换掉列区域
+     * 中值为 ${} 的单元格的值
+     *
+     * @param sheetNo 需要操作的Sheet的编号
+     * @param fromColumnStartIndex 模板row区域的开始索引
+     * @param fromColumnEndIndex 模板row区域的结束索引
+     * @param toColumnIndex 开始插入的row索引
+     * @param copyNum 复制数量
+     * @param delColumnTemp 是否删除模板row区域
+     * @return int 插入的列数量
+     * @throws IOException
+     * @throws InvalidFormatException
+     * */
+    public int addColumnByExist(int sheetNo,int fromColumnStartIndex, int fromColumnEndIndex,int toColumnIndex,
+                                int copyNum, boolean delColumnTemp)
+            throws InvalidFormatException, IOException{
+        LinkedHashMap<Integer, LinkedList<String>> map = new LinkedHashMap<>();
+        for(int i = 1;i <= copyNum;i++){
+            map.put(i,new LinkedList<>());
+        }
+        return addColumnByExist(sheetNo,fromColumnStartIndex,fromColumnEndIndex,toColumnIndex,map,delColumnTemp);
     }
 
     /**
@@ -644,7 +686,7 @@ public class ExcelTemplate {
      * @param toColumnIndex 粘贴的行
      * @param copyValueFlag 是否需要复制值
      */
-    public void copyColumn(int fromSheetNo,int fromColumnIndex,int toSheetNo,
+    private void copyColumn(int fromSheetNo,int fromColumnIndex,int toSheetNo,
                            int toColumnIndex,boolean copyValueFlag) {
         if(fromSheetNo < 0 || fromSheetNo > workbook.getNumberOfSheets()
                 || toSheetNo < 0 || toSheetNo > workbook.getNumberOfSheets())
@@ -866,6 +908,7 @@ public class ExcelTemplate {
         return splitRangeAddr;
     }
 
+    // 检查合并区域
     private boolean examineRange(CellRangeAddress address){
         if(address == null || !examine())
             return false;
@@ -1007,6 +1050,13 @@ public class ExcelTemplate {
         workbook.removeSheetAt(tempSheetNo);
     }
 
+    /**
+     * 移除掉行区域
+     *
+     * @param sheetNo 需要操作的Sheet的编号
+     * @param startRow 起始行
+     * @param endRow 结束行
+     * */
     public void removeRowArea(int sheetNo,int startRow,int endRow){
         if(!examine() || !initSheet(sheetNo) || startRow > endRow)
             return;
@@ -1069,6 +1119,13 @@ public class ExcelTemplate {
         workbook.removeSheetAt(tempSheetNo);
     }
 
+    /**
+     * 移除掉列区域
+     *
+     * @param sheetNo 需要操作的Sheet的编号
+     * @param startCol 起始列
+     * @param endCol 结束列
+     * */
     public void removeColumnArea(int sheetNo,int startCol,int endCol){
         if(!examine() || !initSheet(sheetNo) || startCol > endCol)
             return;
@@ -1169,7 +1226,16 @@ public class ExcelTemplate {
         }
     }
 
-    private boolean clearSheet(int sheetNo){
+    /**
+     * 清除掉sheet，清除不是删除，只是会清除所有
+     * 的列的值和和合并单元格
+     *
+     * @param sheetNo 需要操作的Sheet的编号
+     * @return boolean true-成功 false-失败
+     * */
+    public boolean clearSheet(int sheetNo){
+        if(!examine())
+            return false;
         int sheetNum;
         if(sheetNo < 0 || sheetNo > (sheetNum = workbook.getNumberOfSheets()))
             return false;

@@ -115,6 +115,13 @@ public class ExcelTemplate {
     private boolean initSheet(int sheetNo){
         if(!examine() || sheetNo < 0 || sheetNo > sheets.length - 1)
             return false;
+        int sheetNum = workbook.getNumberOfSheets();
+        sheets = new Sheet[sheetNum];
+        for(int i = 0;i < sheetNum;i++){
+            if(i == sheetNo)
+                sheet = workbook.getSheetAt(i);
+            sheets[i] = workbook.getSheetAt(i);
+        }
         sheet = workbook.getSheetAt(sheetNo);
         return true;
     }
@@ -687,7 +694,7 @@ public class ExcelTemplate {
      * @param copyValueFlag 是否需要复制值
      */
     private void copyColumn(int fromSheetNo,int fromColumnIndex,int toSheetNo,
-                           int toColumnIndex,boolean copyValueFlag) {
+                            int toColumnIndex,boolean copyValueFlag) {
         if(fromSheetNo < 0 || fromSheetNo > workbook.getNumberOfSheets()
                 || toSheetNo < 0 || toSheetNo > workbook.getNumberOfSheets())
             return;
@@ -966,7 +973,7 @@ public class ExcelTemplate {
         if(!clearSheet(sheetNo)){
             return;
         }
-        for(int i= firstRowNum;i < lastRowNum - firstRowNum + 1;i++){
+        for(int i= firstRowNum;i < lastRowNum - firstRowNum + moveNum + 1;i++){
             sheet.createRow(i);
         }
         for(int i= firstRowNum;i < lastRowNum - firstRowNum + 1;i++){
@@ -1316,6 +1323,19 @@ public class ExcelTemplate {
         if(!examine() || !initSheet(sheetNo))
             return 0;
         return sheets[sheetNo].getLastRowNum();
+    }
+
+    /**
+     * 返回excel的缩放率
+     *
+     * @param zoom 缩放率
+     * */
+    public void setZoom(int zoom){
+        if(!examine() || !initSheet(workbook.getSheetIndex(sheet)))
+            return;
+        for (int i = 0; i < sheets.length; i++) {
+            sheets[i].setZoom(zoom);
+        }
     }
 
     @Override

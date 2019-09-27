@@ -590,7 +590,7 @@ public class ExcelTemplate {
         if(examine() && !initSheet(sheetNo))
             return;
         int rn = sheet.getLastRowNum();
-        for(int i = 0;i < rn;i++){
+        for(int i = 0;i <= rn;i++){
             Row row = sheet.getRow(i);
             if(row != null){
                 short cn = row.getLastCellNum();
@@ -700,7 +700,7 @@ public class ExcelTemplate {
             return;
         Sheet fromSheet = workbook.getSheetAt(fromSheetNo);
         Sheet toSheet = workbook.getSheetAt(toSheetNo);
-        for(int i = 0;i < fromSheet.getLastRowNum();i++){
+        for(int i = 0;i <= fromSheet.getLastRowNum();i++){
             Row fromRow = fromSheet.getRow(i);
             Row toRow = toSheet.getRow(i);
             if(fromRow == null)
@@ -976,7 +976,7 @@ public class ExcelTemplate {
         for(int i= firstRowNum;i < lastRowNum - firstRowNum + moveNum + 1;i++){
             sheet.createRow(i);
         }
-        for(int i= firstRowNum;i < lastRowNum - firstRowNum + 1;i++){
+        for(int i= firstRowNum;i <= lastRowNum;i++){
             if(i < startRow)
                 copyRow(tempSheetNo,tempSheet.getRow(i),sheetNo,sheet.getRow(i),true,true);
                 // 到达需要插入的索引的位置，需要留出moveNum空间的行
@@ -1013,7 +1013,7 @@ public class ExcelTemplate {
             return;
         }
 
-        for(int i = firstRowNum;i < lastRowNum;i++){
+        for(int i = firstRowNum;i <= lastRowNum;i++){
             Row row = tempSheet.getRow(i);
             if(row != null){
                 for(int j = 0;j < moveNum;j++){
@@ -1082,7 +1082,7 @@ public class ExcelTemplate {
         }
 
         int delNum = endRow - startRow + 1;
-        for(int i = firstRowNum;i < lastRowNum;i++){
+        for(int i = firstRowNum;i <= lastRowNum;i++){
             Row fromRow = tempSheet.getRow(i);
             Row toRow =  sheet.createRow(i);
             if(i < startRow)
@@ -1145,13 +1145,12 @@ public class ExcelTemplate {
         int firstRowNum = tempSheet.getFirstRowNum();
         // 得到临时sheet的最后一个row的索引
         int lastRowNum = tempSheet.getLastRowNum();
-        int size = lastRowNum - firstRowNum + 1;
 
         if(!clearSheet(sheetNo)){
             return;
         }
 
-        for(int i = firstRowNum;i < lastRowNum;i++){
+        for(int i = firstRowNum;i <= lastRowNum;i++){
             Row row = tempSheet.getRow(i);
             if(row != null){
                 for(int j = 0;j < row.getLastCellNum();j++){
@@ -1203,7 +1202,7 @@ public class ExcelTemplate {
                 sheetNo < 0 || sheetNo > workbook.getNumberOfSheets())
             return;
         List<Row> rows = new ArrayList<>();
-        for(int i = sheet.getFirstRowNum();i < sheet.getLastRowNum();i++){
+        for(int i = sheet.getFirstRowNum();i <= sheet.getLastRowNum();i++){
             Row row = sheet.getRow(i);
             if(row != null)
                 rows.add(row);

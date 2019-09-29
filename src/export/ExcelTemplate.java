@@ -510,9 +510,10 @@ public class ExcelTemplate {
         Cell cell = row.getCell(columnIndex);
         if(cell == null)
             return false;
-        if(cell.getCellTypeEnum() == CellType.STRING
-                || cell.getCellTypeEnum() == CellType.BLANK)
-            cell.setCellValue(value == null ? "" : value);
+        if(cell.getCellTypeEnum() != CellType.BOOLEAN
+                && cell.getCellTypeEnum() != CellType.FORMULA
+                && cell.getCellTypeEnum() != CellType.ERROR)
+            cell.setCellValue(value);
         return true;
     }
 
@@ -541,6 +542,25 @@ public class ExcelTemplate {
                 }).findFirst().orElse(null))// String流重新转换位Cell流
                 .filter(c -> c != null)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 根据断言predicate查找sheet当中符合条件的Row
+     *
+     * @param sheetNo 需要操作的Sheet的编号
+     * @param predicate 筛选的断言
+     * @return List<Row> 符合条件的Row
+     * */
+    public List<Row> findRows(int sheetNo,Predicate<Row> predicate){
+        if(!examine() || !initSheet(sheetNo))
+            return null;
+        List<Row> rows = new ArrayList<>();
+        for(int i = sheet.getFirstRowNum();i <= sheet.getLastRowNum();i++){
+            Row row = sheet.getRow(i);
+            if(predicate.test(row))
+                rows.add(row);
+        }
+        return rows;
     }
 
     /**
@@ -933,7 +953,7 @@ public class ExcelTemplate {
             if(ex instanceof InvalidFormatException)
                 throw new InvalidFormatException("错误的文件格式");
             else if(ex instanceof IOException)
-                throw new IOException();
+                throw new IOException(ex);
             else
                 return;
         }
@@ -973,7 +993,7 @@ public class ExcelTemplate {
         if(!clearSheet(sheetNo)){
             return;
         }
-        for(int i= firstRowNum;i < lastRowNum - firstRowNum + moveNum + 1;i++){
+        for(int i= firstRowNum;i <= lastRowNum - firstRowNum + moveNum + 1;i++){
             sheet.createRow(i);
         }
         for(int i= firstRowNum;i <= lastRowNum;i++){
@@ -1019,7 +1039,7 @@ public class ExcelTemplate {
                 for(int j = 0;j < moveNum;j++){
                     row.createCell(row.getLastCellNum() + moveNum);
                 }
-                for(int j = 0;j < row.getLastCellNum();j++){
+                for(int j = 0;j <= row.getLastCellNum();j++){
                     if(j <= startColumn)
                         copyColumn(tempSheetNo,j,sheetNo,j,true);
                     else
@@ -1325,7 +1345,7 @@ public class ExcelTemplate {
     }
 
     /**
-     * 返回excel的缩放率
+     * 设置excel的缩放率
      *
      * @param zoom 缩放率
      * */

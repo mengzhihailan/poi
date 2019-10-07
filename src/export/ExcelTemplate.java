@@ -977,7 +977,7 @@ public class ExcelTemplate {
      * @param startRow 移动的Row区间的起始位置
      * @param moveNum 移动的行数
      * */
-    public void shiftAndCreateRows(int sheetNo,int startRow,int moveNum){
+    public synchronized void shiftAndCreateRows(int sheetNo,int startRow,int moveNum){
         if(!examine() || !initSheet(sheetNo)
                 || startRow > sheet.getLastRowNum())
             return;
@@ -1016,7 +1016,7 @@ public class ExcelTemplate {
      * @param startColumn 移动的列区间的起始位置
      * @param moveNum 移动的列数
      * */
-    public void shiftAndCreateColumns(int sheetNo,int startColumn,int moveNum){
+    public synchronized void shiftAndCreateColumns(int sheetNo,int startColumn,int moveNum){
         if(!examine() || !initSheet(sheetNo))
             return;
 
@@ -1084,7 +1084,7 @@ public class ExcelTemplate {
      * @param startRow 起始行
      * @param endRow 结束行
      * */
-    public void removeRowArea(int sheetNo,int startRow,int endRow){
+    public synchronized void removeRowArea(int sheetNo,int startRow,int endRow){
         if(!examine() || !initSheet(sheetNo) || startRow > endRow)
             return;
 
@@ -1153,7 +1153,7 @@ public class ExcelTemplate {
      * @param startCol 起始列
      * @param endCol 结束列
      * */
-    public void removeColumnArea(int sheetNo,int startCol,int endCol){
+    public synchronized void removeColumnArea(int sheetNo,int startCol,int endCol){
         if(!examine() || !initSheet(sheetNo) || startCol > endCol)
             return;
 
@@ -1259,7 +1259,7 @@ public class ExcelTemplate {
      * @param sheetNo 需要操作的Sheet的编号
      * @return boolean true-成功 false-失败
      * */
-    public boolean clearSheet(int sheetNo){
+    public synchronized boolean clearSheet(int sheetNo){
         if(!examine())
             return false;
         int sheetNum;

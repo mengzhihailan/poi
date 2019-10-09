@@ -1,13 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="e519e10d-d887-4b04-9058-c53f65ed35d8" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/production/poi/export/ExcelTemplate.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/poi/export/ExcelTemplate.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/production/poi/export/Test.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/production/poi/html/PPTToHtml.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/poi/html/PPTToHtml.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/html/PPTToHtml.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/html/PPTToHtml.java" afterDir="false" />
-    </list>
+    <list default="true" id="e519e10d-d887-4b04-9058-c53f65ed35d8" name="Default Changelist" comment="" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -187,7 +181,7 @@
       <workItem from="1569756176595" duration="369000" />
       <workItem from="1570427220740" duration="523000" />
       <workItem from="1570534001518" duration="717000" />
-      <workItem from="1570587629568" duration="1633000" />
+      <workItem from="1570587629568" duration="1677000" />
     </task>
     <servers />
   </component>

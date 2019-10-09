@@ -3,7 +3,10 @@
   <component name="ChangeListManager">
     <list default="true" id="e519e10d-d887-4b04-9058-c53f65ed35d8" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/export/ExcelTemplate.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/export/ExcelTemplate.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/poi/export/ExcelTemplate.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/poi/export/ExcelTemplate.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/poi/export/Test.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/poi/html/PPTToHtml.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/poi/html/PPTToHtml.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/html/PPTToHtml.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/html/PPTToHtml.java" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -39,7 +42,7 @@
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="E:/ITER_MARKET/iter.market.common" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -69,7 +72,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Application.Test">
+  <component name="RunManager" selected="Application.PPTToHtml">
     <configuration name="ExcelTemplate" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="export.ExcelTemplate" />
       <module name="poi" />
@@ -109,6 +112,19 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="PPTToHtml" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="html.PPTToHtml" />
+      <module name="poi" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="html.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="Test" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="export.Test" />
       <module name="poi" />
@@ -124,6 +140,7 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Application.PPTToHtml" />
         <item itemvalue="Application.Test" />
         <item itemvalue="Application.ExcelTemplate" />
         <item itemvalue="Application.ExcelToHtml" />
@@ -169,7 +186,8 @@
       <workItem from="1569552609103" duration="150000" />
       <workItem from="1569756176595" duration="369000" />
       <workItem from="1570427220740" duration="523000" />
-      <workItem from="1570534001518" duration="33000" />
+      <workItem from="1570534001518" duration="717000" />
+      <workItem from="1570587629568" duration="1633000" />
     </task>
     <servers />
   </component>

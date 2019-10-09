@@ -253,8 +253,8 @@ public class PPTToHtml {
     public static void main(String[] args) {
         PPTToHtml pptToHtml = new PPTToHtml();
         String result =
-                pptToHtml.PPT2007toHtml(
-                        "F:\\LP-T07-05 Sample Completion.pptx", "F:\\测试\\", 8);
+                pptToHtml.PPT2003toHtml(
+                        "F:\\公司制度\\入职培训.ppt", "F:\\测试\\", 8);
         System.out.println(result);
     }
 }

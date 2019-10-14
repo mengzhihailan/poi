@@ -338,10 +338,11 @@ public class ExcelToHtml {
                 if (bgColorStr != null && !"".equals(bgColorStr.trim())) {
                     sb.append("background-color:" + bgColorStr + ";"); // 背景颜色
                 }
-                sb.append( getBorderStyle(palette,0,cellStyle.getBorderTop(),cellStyle.getTopBorderColor()));
-                sb.append( getBorderStyle(palette,1,cellStyle.getBorderRight(),cellStyle.getRightBorderColor()));
-                sb.append( getBorderStyle(palette,3,cellStyle.getBorderLeft(),cellStyle.getLeftBorderColor()));
-                sb.append( getBorderStyle(palette,2,cellStyle.getBorderBottom(),cellStyle.getBottomBorderColor()));
+                BorderStyle borderStyle = cellStyle.getBorderBottomEnum();
+                sb.append( getBorderStyle(palette,0,borderStyle.getCode(),cellStyle.getTopBorderColor()));
+                sb.append( getBorderStyle(palette,1,borderStyle.getCode(),cellStyle.getRightBorderColor()));
+                sb.append( getBorderStyle(palette,3,borderStyle.getCode(),cellStyle.getLeftBorderColor()));
+                sb.append( getBorderStyle(palette,2,borderStyle.getCode(),cellStyle.getBottomBorderColor()));
             }
 
             sb.append("' ");
@@ -379,7 +380,7 @@ public class ExcelToHtml {
 
         StringBuffer sb = new StringBuffer("");
         if (hc != null) {
-            if (HSSFColor.AUTOMATIC.index == hc.getIndex()) {
+            if (HSSFColor.HSSFColorPredefined.AUTOMATIC.getIndex() == hc.getIndex()) {
                 return null;
             }
             sb.append("#");
@@ -493,14 +494,5 @@ public class ExcelToHtml {
             throw new IOException();
         }
         return excelSavePath;
-    }
-
-    public static void main(String[] args) {
-        ExcelToHtml excelToHtml = new ExcelToHtml();
-        try {
-            System.out.println(excelToHtml.excelToHtml("F:\\","xlsx",".xlsx","F:\\测试"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 }

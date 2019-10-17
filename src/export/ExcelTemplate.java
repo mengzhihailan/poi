@@ -252,16 +252,16 @@ public class ExcelTemplate {
 
     /**
      * 使用一个已经存在的列区域作为模板，
-     * 从sheet的toColumnIndex行开始插入这段列区域,
+     * 从sheet的toColumnIndex列开始插入这段列区域,
      * areaValue会从上至下，从左至右的替换掉列区域
      * 中值为 ${} 的单元格的值
      *
      * @param sheetNo 需要操作的Sheet的编号
-     * @param fromColumnStartIndex 模板row区域的开始索引
-     * @param fromColumnEndIndex 模板row区域的结束索引
-     * @param toColumnIndex 开始插入的row索引
-     * @param areaValues 替换模板row区域的${}值
-     * @param delColumnTemp 是否删除模板row区域
+     * @param fromColumnStartIndex 模板列区域的开始索引
+     * @param fromColumnEndIndex 模板列区域的结束索引
+     * @param toColumnIndex 开始插入的列索引
+     * @param areaValues 替换模板列区域的${}值
+     * @param delColumnTemp 是否删除模板列区域
      * @return int 插入的列数量
      * @throws IOException
      * @throws InvalidFormatException

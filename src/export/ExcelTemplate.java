@@ -73,6 +73,10 @@ import java.util.stream.Collectors;
  *         e.printStackTrace();
  *     }
  * }
+ *
+ * @author: jyb
+ * @Description: excel模板操作
+ * @Email: 253684597@qq.com
  * */
 public class ExcelTemplate {
     private String path;
@@ -88,6 +92,8 @@ public class ExcelTemplate {
     private List<Cell> cellList = null;
 
     private int[] alphabet;
+
+    private Pattern doublePattern = Pattern.compile("^[0-9]+[.]{0,1}[0-9]*[dD]{0,1}$");
 
     /**
      * 通过模板Excel的路径初始化
@@ -107,6 +113,7 @@ public class ExcelTemplate {
             }
             if(sheets.length > 0)
                 sheet = sheets[0];
+            sheet.setForceFormulaRecalculation(true);
         } catch (InvalidFormatException e) {
             ex = e;
         } catch (IOException e) {
@@ -125,6 +132,7 @@ public class ExcelTemplate {
             sheets[i] = workbook.getSheetAt(i);
         }
         sheet = workbook.getSheetAt(sheetNo);
+        sheet.setForceFormulaRecalculation(true);
         return true;
     }
 
@@ -158,11 +166,11 @@ public class ExcelTemplate {
      * @param toRowIndex 开始插入的row索引值
      * @param copyNum 复制的数量
      * @param delRowTemp 是否删除模板row区域
-     * @return List<Row> 插入的行
+     * @return int 插入的行数量
      * @throws IOException
      * @throws InvalidFormatException
      * */
-    public List<Row> addRowByExist(int sheetNo,int fromRowStartIndex, int fromRowEndIndex,int toRowIndex, int copyNum,boolean delRowTemp)
+    public int addRowByExist(int sheetNo,int fromRowStartIndex, int fromRowEndIndex,int toRowIndex, int copyNum,boolean delRowTemp)
             throws IOException, InvalidFormatException {
         LinkedHashMap<Integer, LinkedList<String>> map = new LinkedHashMap<>();
         for(int i = 1;i <= copyNum;i++){
@@ -181,12 +189,12 @@ public class ExcelTemplate {
      * @param fromRowIndex 模板行的索引
      * @param toRowIndex 开始插入的row索引
      * @param areaValues 替换模板row区域的${}值
-     * @return List<Row> 插入的行
+     * @return int 插入的行数量
      * @throws IOException
      * @throws InvalidFormatException
      * */
-    public List<Row> addRowByExist(int sheetNo,int fromRowIndex, int toRowIndex,
-                                   LinkedHashMap<Integer,LinkedList<String>> areaValues)
+    public int addRowByExist(int sheetNo,int fromRowIndex, int toRowIndex,
+                             LinkedHashMap<Integer,LinkedList<String>> areaValues)
             throws IOException, InvalidFormatException {
         return addRowByExist(sheetNo,fromRowIndex,fromRowIndex,toRowIndex,areaValues,true);
     }
@@ -203,21 +211,20 @@ public class ExcelTemplate {
      * @param toRowIndex 开始插入的row索引
      * @param areaValues 替换模板row区域的${}值
      * @param delRowTemp 是否删除模板row区域
-     * @return List<Row> 插入的行
+     * @return int 插入的行数量
      * @throws IOException
      * @throws InvalidFormatException
      * */
-    public List<Row> addRowByExist(int sheetNo,int fromRowStartIndex, int fromRowEndIndex,int toRowIndex,
-                                   LinkedHashMap<Integer,LinkedList<String>> areaValues, boolean delRowTemp)
+    public int addRowByExist(int sheetNo,int fromRowStartIndex, int fromRowEndIndex,int toRowIndex,
+                             LinkedHashMap<Integer,LinkedList<String>> areaValues, boolean delRowTemp)
             throws InvalidFormatException, IOException {
         exception();
         if(!examine()
                 || !initSheet(sheetNo)
                 || !examineSheetRow(fromRowStartIndex)
                 || !examineSheetRow(fromRowEndIndex)
-                || !examineSheetRow(toRowIndex)
                 || fromRowStartIndex > fromRowEndIndex)
-            return null;
+            return 0;
         int areaNum;List<Row> rows = new ArrayList<>();
         if(areaValues != null){
             int n = 0,f = areaValues.size() * (areaNum = (fromRowEndIndex - fromRowStartIndex + 1));
@@ -237,7 +244,7 @@ public class ExcelTemplate {
                         row = copyRow(sheetNo,sheet.getRow(fromRowStartIndex + i + f),sheetNo,toRow,true,true);
                     temp.add(row);
                 }
-                // 使用传入的值覆盖${}
+                // 使用传入的值覆盖${}或者N${}
                 replaceMark(temp,areaValues.get(key));
                 rows.addAll(temp);
                 n++;
@@ -249,7 +256,7 @@ public class ExcelTemplate {
                     removeRowArea(sheetNo,fromRowStartIndex + f,fromRowEndIndex + f);
             }
         }
-        return rows;
+        return rows.size();
     }
 
     /**
@@ -341,8 +348,10 @@ public class ExcelTemplate {
                 needFillCells = cellList;
                 // 获取所有的值为${}单元格
                 needFillCells = needFillCells.stream().filter(c -> {
-                    if(c != null && c.getCellTypeEnum() == CellType.STRING && "${}".equals(c.getStringCellValue()))
-                        return true;
+                    if(c != null && c.getCellTypeEnum() == CellType.STRING){
+                        if ("${}".equals(c.getStringCellValue()) || "N${}".equals(c.getStringCellValue()))
+                            return true;
+                    }
                     return false;
                 }).collect(Collectors.toList());
                 if (needFillCells == null)
@@ -382,7 +391,14 @@ public class ExcelTemplate {
                         }).forEach(c -> {
                     if(fillValues.size() > 0){
                         // 设置为列的首行，再移除掉首行的值
-                        c.setCellValue(fillValues.stream().findFirst().orElse(""));
+                        String value = fillValues.stream().findFirst().orElse("");
+                        if (doublePattern.matcher(value).find()){
+                            c.setCellType(CellType.NUMERIC);
+                            c.setCellValue(Double.parseDouble(value));
+                        }
+                        else {
+                            c.setCellValue(value);
+                        }
                         fillValues.remove(0);
                     }
                 });
@@ -484,17 +500,25 @@ public class ExcelTemplate {
         });
         cellVal.forEach((k,v) -> {
             String cellValue = k.getStringCellValue();
-            k.setCellValue(composeMessage(cellValue,v));
+            String value = composeMessage(cellValue,v);
+            Matcher matcher = doublePattern.matcher(value);
+            if (matcher.find()){
+                k.setCellType(CellType.NUMERIC);
+                k.setCellValue(Double.parseDouble(value));
+            }
+            else
+                k.setCellValue(value);
         });
         return ns.get(0);
     }
 
     /**
-     * 根据行坐标和列坐标定位到单元格，并且使用value填充单元格
+     * 根据行坐标和列坐标定位到单元格，填充单元格
      *
      * @param sheetNo 需要操作的Sheet的编号
-     * @param rowIndex 填充的值
-     * @param columnIndex 填充的值
+     * @param rowIndex 行坐标
+     * @param columnIndex 列坐标
+     * @param value 填充的值
      * @return boolean 是否成功
      * @throws IOException
      * @throws InvalidFormatException
@@ -510,10 +534,14 @@ public class ExcelTemplate {
         Cell cell = row.getCell(columnIndex);
         if(cell == null)
             return false;
-        if(cell.getCellTypeEnum() != CellType.BOOLEAN
-                && cell.getCellTypeEnum() != CellType.FORMULA
-                && cell.getCellTypeEnum() != CellType.ERROR)
+        if (doublePattern.matcher(value).find()){
+            cell.setCellType(CellType.NUMERIC);
+            cell.setCellValue(Double.parseDouble(value));
+        }
+        else{
+            cell.setCellType(CellType.STRING);
             cell.setCellValue(value);
+        }
         return true;
     }
 
@@ -813,13 +841,29 @@ public class ExcelTemplate {
         rows.forEach(r -> {
             if(r != null){
                 r.forEach(c -> {
-                    if(c.getCellTypeEnum() == CellType.STRING && "${}".equals(c.getStringCellValue())){
-                        if(valueList == null)
-                            return;
-                        String value = valueList.stream().findFirst().orElse(null);
-                        c.setCellValue(value);
-                        if(value != null)
-                            valueList.remove(valueList.indexOf(value));
+                    if (c != null){
+                        if (c.getCellTypeEnum() == CellType.STRING){
+                            if("${}".equals(c.getStringCellValue())){
+                                if(valueList == null)
+                                    return;
+                                String value = valueList.stream().findFirst().orElse(null);
+                                c.setCellValue(value);
+                                if(value != null)
+                                    valueList.remove(valueList.indexOf(value));
+                            }
+                            else if("N${}".equals(c.getStringCellValue())){
+                                if(valueList == null)
+                                    return;
+                                String value = valueList.stream().findFirst().orElse(null);
+                                Matcher matcher = doublePattern.matcher(value);
+                                if (matcher.find()){
+                                    c.setCellType(CellType.NUMERIC);
+                                    c.setCellValue(Double.parseDouble(value));
+                                    if(value != null)
+                                        valueList.remove(valueList.indexOf(value));
+                                }
+                            }
+                        }
                     }
                 });
             }
@@ -1156,8 +1200,7 @@ public class ExcelTemplate {
      * @param moveNum 移动的行数
      * */
     public synchronized void shiftAndCreateRows(int sheetNo,int startRow,int moveNum){
-        if(!examine() || !initSheet(sheetNo)
-                || startRow > sheet.getLastRowNum())
+        if(!examine() || !initSheet(sheetNo))
             return;
 
         // 复制当前需要操作的sheet到一个临时的sheet
@@ -1171,8 +1214,13 @@ public class ExcelTemplate {
         if(!clearSheet(sheetNo)){
             return;
         }
-        for(int i= firstRowNum;i <= lastRowNum - firstRowNum + moveNum + 1;i++){
-            sheet.createRow(i);
+        if (startRow <= lastRowNum){
+            for(int i= firstRowNum;i <= lastRowNum - firstRowNum + moveNum + 1;i++)
+                sheet.createRow(i);
+        }
+        else {
+            for(int i= firstRowNum;i <= startRow + moveNum + 1;i++)
+                sheet.createRow(i);
         }
         for(int i= firstRowNum;i <= lastRowNum;i++){
             if(i < startRow)

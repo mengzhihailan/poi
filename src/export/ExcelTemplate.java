@@ -87,6 +87,8 @@ public class ExcelTemplate {
 
     private List<Cell> cellList = null;
 
+    private int[] alphabet;
+
     /**
      * 通过模板Excel的路径初始化
      * */
@@ -156,11 +158,11 @@ public class ExcelTemplate {
      * @param toRowIndex 开始插入的row索引值
      * @param copyNum 复制的数量
      * @param delRowTemp 是否删除模板row区域
-     * @return int 插入的行数量
+     * @return List<Row> 插入的行
      * @throws IOException
      * @throws InvalidFormatException
      * */
-    public int addRowByExist(int sheetNo,int fromRowStartIndex, int fromRowEndIndex,int toRowIndex, int copyNum,boolean delRowTemp)
+    public List<Row> addRowByExist(int sheetNo,int fromRowStartIndex, int fromRowEndIndex,int toRowIndex, int copyNum,boolean delRowTemp)
             throws IOException, InvalidFormatException {
         LinkedHashMap<Integer, LinkedList<String>> map = new LinkedHashMap<>();
         for(int i = 1;i <= copyNum;i++){
@@ -179,12 +181,12 @@ public class ExcelTemplate {
      * @param fromRowIndex 模板行的索引
      * @param toRowIndex 开始插入的row索引
      * @param areaValues 替换模板row区域的${}值
-     * @return int 插入的行数量
+     * @return List<Row> 插入的行
      * @throws IOException
      * @throws InvalidFormatException
      * */
-    public int addRowByExist(int sheetNo,int fromRowIndex, int toRowIndex,
-                             LinkedHashMap<Integer,LinkedList<String>> areaValues)
+    public List<Row> addRowByExist(int sheetNo,int fromRowIndex, int toRowIndex,
+                                   LinkedHashMap<Integer,LinkedList<String>> areaValues)
             throws IOException, InvalidFormatException {
         return addRowByExist(sheetNo,fromRowIndex,fromRowIndex,toRowIndex,areaValues,true);
     }
@@ -201,12 +203,12 @@ public class ExcelTemplate {
      * @param toRowIndex 开始插入的row索引
      * @param areaValues 替换模板row区域的${}值
      * @param delRowTemp 是否删除模板row区域
-     * @return int 插入的行数量
+     * @return List<Row> 插入的行
      * @throws IOException
      * @throws InvalidFormatException
      * */
-    public int addRowByExist(int sheetNo,int fromRowStartIndex, int fromRowEndIndex,int toRowIndex,
-                             LinkedHashMap<Integer,LinkedList<String>> areaValues, boolean delRowTemp)
+    public List<Row> addRowByExist(int sheetNo,int fromRowStartIndex, int fromRowEndIndex,int toRowIndex,
+                                   LinkedHashMap<Integer,LinkedList<String>> areaValues, boolean delRowTemp)
             throws InvalidFormatException, IOException {
         exception();
         if(!examine()
@@ -215,7 +217,7 @@ public class ExcelTemplate {
                 || !examineSheetRow(fromRowEndIndex)
                 || !examineSheetRow(toRowIndex)
                 || fromRowStartIndex > fromRowEndIndex)
-            return 0;
+            return null;
         int areaNum;List<Row> rows = new ArrayList<>();
         if(areaValues != null){
             int n = 0,f = areaValues.size() * (areaNum = (fromRowEndIndex - fromRowStartIndex + 1));
@@ -247,7 +249,7 @@ public class ExcelTemplate {
                     removeRowArea(sheetNo,fromRowStartIndex + f,fromRowEndIndex + f);
             }
         }
-        return rows.size();
+        return rows;
     }
 
     /**
@@ -345,7 +347,7 @@ public class ExcelTemplate {
                 }).collect(Collectors.toList());
                 if (needFillCells == null)
                     continue;
-                // 所有的${}单元格按照列从小到大，行从小到达的顺序排序
+                // 所有的${}单元格按照列从小到大，行从小到大的顺序排序
                 needFillCells.sort((c1,c2) -> {
                     if (c1 == null && c2 == null) {
                         return 0;
@@ -600,6 +602,184 @@ public class ExcelTemplate {
         }
         matcher.appendTail(msg);
         return msg.toString();
+    }
+
+    /**
+     * 计算excel公式中的单元格的列和行加上数值后的结果
+     *
+     * @param isColumn 是否是行的计算
+     * @param value 原始值
+     * @param addNum 添加的数量
+     * @return String
+     * */
+    private String addRowOrColumnIndex(boolean isColumn,String value,int addNum){
+        value = value == null ? "" : value;
+        if(isColumn){
+            if (!Pattern.compile("^[A-Z]+$").matcher(value).find())
+                return value;
+            char[] cs = value.toCharArray();
+            int cardinal = 0;
+            // 组合转换为数字
+            for (int i = cs.length - 1; i >= 0; i--) {
+                cardinal += Math.pow(26,cs.length - 1 - i) * (cs[i] - 64);
+            }
+            // 加上添加后的数值
+            cardinal += addNum;
+            // 不能为0
+            cardinal = cardinal <= 0 ? 1 : cardinal;
+            // 是否需要向前借一位
+            boolean borrowBit = false;
+            Stack<Character> stack = new Stack<>();
+            // 数字转换为组合
+            while (true && cardinal > 0){
+                int mode = cardinal % 26;
+                // 如果到达了第一位
+                if(cardinal >= 1 && cardinal < 26){
+                    // 是否需要借位
+                    if (borrowBit)
+                        mode -= 1;
+                    // 首位借位之后必须大于0才能添加
+                    if (mode > 0)
+                        stack.add((char)(mode + 64));
+                    break;
+                }
+                cardinal -= mode;
+                cardinal /= 26;
+                if (borrowBit){
+                    if (mode != 0)
+                        mode -= 1;
+                        // 如果借位的时候，发现本身也为0，需要向前再借位
+                    else{
+                        mode = 25;
+                        borrowBit = true;
+                        stack.add((char)(mode + 64));
+                        continue;
+                    }
+                }
+                if (mode == 0){
+                    mode = 26;
+                    borrowBit = true;
+                }
+                else
+                    borrowBit = false;
+                stack.add((char)(mode + 64));
+            }
+            int size = stack.size();
+            char[] chars = new char[size];
+            for (int j = size - 1; j >= 0; j--) {
+                chars[size - 1 - j] = stack.get(j);
+            }
+            return new String(chars);
+        }
+        else {
+            if(!Pattern.compile("^[0-9]+$").matcher(value).find())
+                return value;
+            try{
+                int intValue = Integer.parseInt(value);
+                intValue += addNum;
+                if (intValue <= 0)
+                    return "1";
+                return Integer.toString(intValue);
+            }catch (NumberFormatException e){
+                return value;
+            }
+        }
+    }
+
+    /**
+     * 修改公式里面单元格参数的坐标
+     *
+     * @param formula 公式
+     * @param index 第几个单元格参数
+     * @param rowAddNum 给行添加的数量
+     * @param columnAddNum 给列添加的数量
+     * @return String
+     * */
+    private String composeFormula(String formula,int index,
+                                  int rowAddNum,int columnAddNum){
+        String regex = "[A-Z]+[0-9]+";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(formula);
+        List<String> valueList = new LinkedList<>();
+        String oldFormula = formula;
+        while(matcher.find()){
+            String value = matcher.group();
+            valueList.add(value);
+            formula = formula.replaceFirst(value,"@&");
+        }
+        if (index >= 0 && index < valueList.size()){
+            String value = valueList.get(index);
+            Matcher columnMatcher = Pattern.compile("[A-Z]+").matcher(value);
+            String newValue = value;
+            if (columnMatcher.find()){
+                String columnIndex = columnMatcher.group();
+                String rowIndex = value.replaceAll(columnIndex,"");
+                columnIndex = addRowOrColumnIndex(true,columnIndex,columnAddNum);
+                rowIndex = addRowOrColumnIndex(false,rowIndex,rowAddNum);
+                newValue = columnIndex + rowIndex;
+            }
+            valueList.set(index,newValue);
+        }
+        String[] spilts = formula.split("@&");
+        if (spilts.length == 0){
+            if (valueList.size() == 1)
+                return valueList.get(0);
+            return oldFormula;
+        }
+        StringBuffer newFormula = new StringBuffer();
+        int position = 0;
+        for (int i = 0; i < spilts.length; i++) {
+            newFormula.append(spilts[i]);
+            if (position < valueList.size()){
+                newFormula.append(valueList.get(position++));
+            }
+        }
+        return newFormula.toString();
+    }
+
+    /**
+     * 获取单元格里面公式的变量数量
+     * 例如公式 SUM(AP40:AV40)，含有两个单元格变量 AP40和AV40，
+     * 使用此方法会返回2
+     *
+     * @param cell 需要操作的单元格
+     * @return int 单元格变量的数量
+     * */
+    public int getFormulaVariableNum(Cell cell){
+        if (cell == null || cell.getCellTypeEnum() != CellType.FORMULA)
+            return 0;
+        String formula = cell.getCellFormula();
+        Matcher matcher = Pattern.compile("[A-Z]+[0-9]+").matcher(formula);
+        int count = 0;
+        while(matcher.find()){
+            count++;
+        }
+        return count;
+    }
+
+    /**
+     * 修改单元格的公式的参数
+     * excel的所有列按照如下规则分布，
+     * A,B,C,D...Z,AA,AB...AZ,BA,BB...BZ...以此类推，
+     * 你可以看成是一个关于A,B,C...Z的排列组合问题
+     *
+     * 举例：
+     * 单元格cell的公式为 SUM(AP40:AV40) 是求单元格 AP40 到 AV40的单元格的和，
+     * 其中AP40中的AP表示单元格的列坐标，40表示横坐标，AV40类推。
+     * 如果使用方法 composeCellFormula(cell,0,2,5)，则cell的公式会修改为 SUM(AU42:AV40)
+     *
+     * @param cell 需要修改的单元格
+     * @param index 第几个单元格参数
+     * @param rowAddNum 给行添加的数量
+     * @param columnAddNum 给列添加的数量
+     * @return String
+     * */
+    public void composeCellFormula(Cell cell,int index,
+                                   int rowAddNum,int columnAddNum){
+        if (cell == null || cell.getCellTypeEnum() != CellType.FORMULA)
+            return;
+        String formula = cell.getCellFormula();
+        cell.setCellFormula(composeFormula(formula,index,rowAddNum,columnAddNum));
     }
 
     // 初始化cellList

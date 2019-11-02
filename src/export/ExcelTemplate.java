@@ -1,5 +1,6 @@
 package export;
 
+import org.apache.poi.EncryptedDocumentException;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
@@ -73,10 +74,6 @@ import java.util.stream.Collectors;
  *         e.printStackTrace();
  *     }
  * }
- *
- * @author: jyb
- * @Description: excel模板操作
- * @Email: 253684597@qq.com
  * */
 public class ExcelTemplate {
     private String path;
@@ -114,7 +111,7 @@ public class ExcelTemplate {
             if(sheets.length > 0)
                 sheet = sheets[0];
             sheet.setForceFormulaRecalculation(true);
-        } catch (InvalidFormatException e) {
+        } catch (EncryptedDocumentException e) {
             ex = e;
         } catch (IOException e) {
             ex = e;
@@ -348,7 +345,7 @@ public class ExcelTemplate {
                 needFillCells = cellList;
                 // 获取所有的值为${}单元格
                 needFillCells = needFillCells.stream().filter(c -> {
-                    if(c != null && c.getCellTypeEnum() == CellType.STRING){
+                    if(c != null && c.getCellType() == CellType.STRING){
                         if ("${}".equals(c.getStringCellValue()) || "N${}".equals(c.getStringCellValue()))
                             return true;
                     }
@@ -392,8 +389,7 @@ public class ExcelTemplate {
                     if(fillValues.size() > 0){
                         // 设置为列的首行，再移除掉首行的值
                         String value = fillValues.stream().findFirst().orElse("");
-                        if (doublePattern.matcher(value).find()){
-                            c.setCellType(CellType.NUMERIC);
+                        if (doublePattern.matcher(value == null ? "": value).find()){
                             c.setCellValue(Double.parseDouble(value));
                         }
                         else {
@@ -501,9 +497,8 @@ public class ExcelTemplate {
         cellVal.forEach((k,v) -> {
             String cellValue = k.getStringCellValue();
             String value = composeMessage(cellValue,v);
-            Matcher matcher = doublePattern.matcher(value);
+            Matcher matcher = doublePattern.matcher(value == null ? "": value);
             if (matcher.find()){
-                k.setCellType(CellType.NUMERIC);
                 k.setCellValue(Double.parseDouble(value));
             }
             else
@@ -534,12 +529,10 @@ public class ExcelTemplate {
         Cell cell = row.getCell(columnIndex);
         if(cell == null)
             return false;
-        if (doublePattern.matcher(value).find()){
-            cell.setCellType(CellType.NUMERIC);
+        if (doublePattern.matcher(value == null ? "": value).find()){
             cell.setCellValue(Double.parseDouble(value));
         }
         else{
-            cell.setCellType(CellType.STRING);
             cell.setCellValue(value);
         }
         return true;
@@ -557,13 +550,13 @@ public class ExcelTemplate {
         initCellList(sheetNo);
         return cellList.stream()
                 .map(c -> {
-                    if(c != null && c.getCellTypeEnum() == CellType.STRING)
+                    if(c != null && c.getCellType() == CellType.STRING)
                         return c.getStringCellValue();
                     return null;
                 })// Cell流转换为String流
                 .filter(predicate)
                 .map(s -> cellList.stream().filter(c -> {
-                    if(c != null && c.getCellTypeEnum() == CellType.STRING
+                    if(c != null && c.getCellType() == CellType.STRING
                             && s.equals(c.getStringCellValue()))
                         return true;
                     return false;
@@ -616,7 +609,7 @@ public class ExcelTemplate {
     private String composeMessage(String data, Map<String,String> paramData){
         String regex = "\\$\\{(.+?)\\}";
         Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(data);
+        Matcher matcher = pattern.matcher(data == null ? "": data);
         StringBuffer msg = new StringBuffer();
         while (matcher.find()) {
             String key = matcher.group(1);// 键名
@@ -727,7 +720,7 @@ public class ExcelTemplate {
                                   int rowAddNum,int columnAddNum){
         String regex = "[A-Z]+[0-9]+";
         Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(formula);
+        Matcher matcher = pattern.matcher(formula == null ? "" : formula);
         List<String> valueList = new LinkedList<>();
         String oldFormula = formula;
         while(matcher.find()){
@@ -774,10 +767,10 @@ public class ExcelTemplate {
      * @return int 单元格变量的数量
      * */
     public int getFormulaVariableNum(Cell cell){
-        if (cell == null || cell.getCellTypeEnum() != CellType.FORMULA)
+        if (cell == null || cell.getCellType() != CellType.FORMULA)
             return 0;
         String formula = cell.getCellFormula();
-        Matcher matcher = Pattern.compile("[A-Z]+[0-9]+").matcher(formula);
+        Matcher matcher = Pattern.compile("[A-Z]+[0-9]+").matcher(formula == null ? "" : formula);
         int count = 0;
         while(matcher.find()){
             count++;
@@ -804,7 +797,7 @@ public class ExcelTemplate {
      * */
     public void composeCellFormula(Cell cell,int index,
                                    int rowAddNum,int columnAddNum){
-        if (cell == null || cell.getCellTypeEnum() != CellType.FORMULA)
+        if (cell == null || cell.getCellType() != CellType.FORMULA)
             return;
         String formula = cell.getCellFormula();
         cell.setCellFormula(composeFormula(formula,index,rowAddNum,columnAddNum));
@@ -842,7 +835,7 @@ public class ExcelTemplate {
             if(r != null){
                 r.forEach(c -> {
                     if (c != null){
-                        if (c.getCellTypeEnum() == CellType.STRING){
+                        if (c.getCellType() == CellType.STRING){
                             if("${}".equals(c.getStringCellValue())){
                                 if(valueList == null)
                                     return;
@@ -855,9 +848,8 @@ public class ExcelTemplate {
                                 if(valueList == null)
                                     return;
                                 String value = valueList.stream().findFirst().orElse(null);
-                                Matcher matcher = doublePattern.matcher(value);
+                                Matcher matcher = doublePattern.matcher(value == null ? "" : value);
                                 if (matcher.find()){
-                                    c.setCellType(CellType.NUMERIC);
                                     c.setCellValue(Double.parseDouble(value));
                                     if(value != null)
                                         valueList.remove(valueList.indexOf(value));
@@ -986,8 +978,7 @@ public class ExcelTemplate {
             distCell.setCellComment(srcCell.getCellComment());
         }
         // 不同数据类型处理
-        CellType srcCellType = srcCell.getCellTypeEnum();
-        distCell.setCellType(srcCellType);
+        CellType srcCellType = srcCell.getCellType();
         if(copyValueFlag) {
             if(srcCellType == CellType.NUMERIC) {
                 if(DateUtil.isCellDateFormatted(srcCell)) {
@@ -1480,7 +1471,7 @@ public class ExcelTemplate {
 
     /**
      * 清除掉sheet，清除不是删除，只是会清除所有
-     * 的列的值和合并单元格
+     * 的列的值和和合并单元格
      *
      * @param sheetNo 需要操作的Sheet的编号
      * @return boolean true-成功 false-失败
@@ -1606,5 +1597,77 @@ public class ExcelTemplate {
     public String toString(){
         return "ExcelTemplate from " + path + " is " +
                 (examine() ? "effective" : "invalid");
+    }
+
+    public static void main(String[] args) {
+        ExcelTemplate excel = new ExcelTemplate("F:\\文件\\学生成绩模板.xlsx");
+        // 使用一个Map来存储所有的行区域，
+        // 每个行区域对应Map的一个键
+        LinkedHashMap<Integer, LinkedList<String>> rows = new LinkedHashMap<>();
+        // 创建第一个行区域里面填充的值，ExcelTemplate会按从左至右，
+        // 从上往下的顺序，挨个填充区域里面的${}，所以创建的时候注意顺序就好
+        LinkedList<String> row1 = new LinkedList<>();
+        row1.add("张三");
+        row1.add("90");
+        row1.add("87");
+        row1.add("76");
+        row1.add("82.3");
+        row1.add("85");
+        // 把第一个行区域row1添加进入rows
+        rows.put(1,row1);
+        // 创建第二个行区域里面填充的值
+        LinkedList<String> row2 = new LinkedList<>();
+        row2.add("李四");
+        row2.add("70");
+        row2.add("66");
+        row2.add("87");
+        row2.add("92");
+        row2.add("81");
+        // 把第二个行区域row2添加进入rows
+        rows.put(2,row2);
+        try {
+            // 获取到刚插入的行的数量
+            int addRowNum = excel.addRowByExist(0,2,2,
+                    3,rows,true);
+            List<Row> rowList = new ArrayList<>();
+            // 获取当前Sheet
+            Sheet sheet = excel.getWorkbook().getSheetAt(0);
+            // 从插入位置开始循环，获取刚插入的行
+            for (int i = 2;i < 2 + addRowNum;i++){
+                rowList.add(sheet.getRow(i));
+            }
+            // 循环读取刚插入的行
+            for (int i = 0; i < rowList.size(); i++) {
+                Row row = rowList.get(i);
+                if (row == null)
+                    continue;
+                // 循环行的每个单元格
+                for (int j = 0; j <= row.getLastCellNum(); j++) {
+                    Cell cell = row.getCell(j);
+                    // 单元格必须是公式类型的
+                    if (cell == null || cell.getCellType() != CellType.FORMULA)
+                        continue;
+                    // 获取单元格公式参数的个数
+                    // 比如 SUM(B3:F3)，有两个两个参数 B3 F3
+                    // 比如 COUNTIF($E2:$AI2,"病")*12+COUNTIF($E2:$AI2,"病4H")*4
+                    // 就有四个参数 E2、AI2、E2、AI2 注意，重复的（上述含有两个E2）也算！
+                    int formulaVariableNum = excel.getFormulaVariableNum(cell);
+                    // 循环操作参数，给参数添加行，添加列等
+                    for (int k = 0; k < formulaVariableNum; k++) {
+                        // 第一个参数，当前的单元格
+                        // 第二个参数，操作的是公式里的第几个参数（比如说是B3，还是F3）
+                        // 第三个参数，这个参数的行添加量
+                        // 第四个参数，这个参数的列添加量
+                        // 如果还是不懂的话，可以查看composeCellFormula方法的注释
+                        excel.composeCellFormula(cell,k,i,0);
+                    }
+                }
+            }
+            excel.save("F:\\测试\\学生成绩统计.xlsx");
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InvalidFormatException e) {
+            e.printStackTrace();
+        }
     }
 }

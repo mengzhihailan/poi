@@ -1,11 +1,11 @@
 package html;
 
+import export.ExcelTemplate;
 import org.apache.poi.hssf.usermodel.*;
 import org.apache.poi.hssf.util.HSSFColor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.*;
-import org.apache.xmlbeans.impl.piccolo.io.FileFormatException;
 
 import java.io.*;
 import java.text.DecimalFormat;
@@ -39,7 +39,7 @@ public class ExcelToHtml {
                 sourcePath = excelPath.substring(0,excelPath.lastIndexOf(File.separator)+1);
                 sourceFileName = excelPath.substring(excelPath.lastIndexOf(File.separator)+1,excelPath.length());
                 if(sourceFileName.lastIndexOf(".") < 0)
-                    throw new FileFormatException("没有文件类型的文件，不支持预览");
+                    throw new Exception("没有文件类型的文件，不支持预览");
                 suffix = sourceFileName.substring(sourceFileName.lastIndexOf("."),sourceFileName.length());
                 sourceFileName = sourceFileName.substring(0,sourceFileName.lastIndexOf("."));
             } catch (Exception e) {
@@ -105,11 +105,13 @@ public class ExcelToHtml {
      * @return
      */
     public String getExcelInfo(Workbook wb, boolean isWithStyle){
+        String domain = System.getProperty("BASF-DOMAIN");
+        domain = domain == null ? "" : domain;
         StringBuffer sb = new StringBuffer();
         sb.append("<!DOCTYPE html><html><head>")
-                .append("<script language=\"javascript\" src=\"js/jquery.min.js\"></script>")
-                .append("<script language=\"javascript\" src=\"js/common.js\"></script>")
-                .append("<link type=\"text/css\" rel=\"stylesheet\" href=\"css/style.css\" />")
+                .append("<script language=\"javascript\" src=\""+domain+"WEB-JSP/js/jquery.min.js\"></script>")
+                .append("<script language=\"javascript\" src=\""+domain+"WEB-JSP/js/common.js\"></script>")
+                .append("<link type=\"text/css\" rel=\"stylesheet\" href=\""+domain+"WEB-JSP/css/style.css\" />")
                 .append("</head><body>");
 
         sb.append("<div class=\"investment_f\">").append("<div class=\"investment_title\">");
@@ -231,9 +233,9 @@ public class ExcelToHtml {
     private String getCellValue(Cell cell) {
 
         String result = new String();
-        switch (cell.getCellTypeEnum()) {
+        switch (cell.getCellType()) {
             case NUMERIC:// 数字类型
-                if (HSSFDateUtil.isCellDateFormatted(cell)) {// 处理日期格式、时间格式
+                if (DateUtil.isCellDateFormatted(cell)) {// 处理日期格式、时间格式
                     SimpleDateFormat sdf = null;
                     if (cell.getCellStyle().getDataFormat() == HSSFDataFormat.getBuiltinFormat("h:mm")) {
                         sdf = new SimpleDateFormat("HH:mm");
@@ -287,9 +289,9 @@ public class ExcelToHtml {
 
         CellStyle cellStyle = cell.getCellStyle();
         if (cellStyle != null) {
-            short alignment = cellStyle.getAlignmentEnum().getCode();
+            short alignment = cellStyle.getAlignment().getCode();
             sb.append("align='" + convertAlignToHtml(alignment) + "' ");//单元格内容的水平对齐方式
-            short verticalAlignment = cellStyle.getVerticalAlignmentEnum().getCode();
+            short verticalAlignment = cellStyle.getVerticalAlignment().getCode();
             sb.append("valign='"+ convertVerticalAlignToHtml(verticalAlignment)+ "' ");//单元格中内容的垂直排列方式
 
             if (wb instanceof XSSFWorkbook) {
@@ -310,7 +312,7 @@ public class ExcelToHtml {
                 if (bgColor != null && !"".equals(bgColor)) {
                     sb.append("background-color:#" + bgColor.getARGBHex().substring(2) + ";"); // 背景颜色
                 }
-                BorderStyle border = cellStyle.getBorderBottomEnum();
+                BorderStyle border = cellStyle.getBorderBottom();
                 sb.append(getBorderStyle(0,border.getCode(), ((XSSFCellStyle) cellStyle).getTopBorderXSSFColor()));
                 sb.append(getBorderStyle(1,border.getCode(), ((XSSFCellStyle) cellStyle).getRightBorderXSSFColor()));
                 sb.append(getBorderStyle(2,border.getCode(), ((XSSFCellStyle) cellStyle).getBottomBorderXSSFColor()));
@@ -338,7 +340,7 @@ public class ExcelToHtml {
                 if (bgColorStr != null && !"".equals(bgColorStr.trim())) {
                     sb.append("background-color:" + bgColorStr + ";"); // 背景颜色
                 }
-                BorderStyle borderStyle = cellStyle.getBorderBottomEnum();
+                BorderStyle borderStyle = cellStyle.getBorderBottom();
                 sb.append( getBorderStyle(palette,0,borderStyle.getCode(),cellStyle.getTopBorderColor()));
                 sb.append( getBorderStyle(palette,1,borderStyle.getCode(),cellStyle.getRightBorderColor()));
                 sb.append( getBorderStyle(palette,3,borderStyle.getCode(),cellStyle.getLeftBorderColor()));
@@ -494,5 +496,14 @@ public class ExcelToHtml {
             throw new IOException();
         }
         return excelSavePath;
+    }
+
+    public static void main(String[] args) {
+        ExcelToHtml excelToHtml = new ExcelToHtml();
+        try {
+            excelToHtml.excelToHtml("F:\\文件","副本BCSC-2019年9月份排班表",".xlsx","F:\\测试");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

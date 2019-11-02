@@ -1480,7 +1480,7 @@ public class ExcelTemplate {
 
     /**
      * 清除掉sheet，清除不是删除，只是会清除所有
-     * 的列的值和和合并单元格
+     * 的列的值和合并单元格
      *
      * @param sheetNo 需要操作的Sheet的编号
      * @return boolean true-成功 false-失败

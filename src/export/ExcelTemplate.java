@@ -1,7 +1,6 @@
 package export;
 
 import org.apache.poi.EncryptedDocumentException;
-import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 
@@ -16,64 +15,9 @@ import java.util.stream.Collectors;
  * 使用一个已经存在的Excel作为模板，可以对当前的模板Excel进行修改操作，
  * 然后重新输出为流，或者存入文件系统当中。
  *
- * ExcelTemplate可以使用当前Excel中已经存在的行作为模板，插入新的行。
- * 比如说excel中的某些行，具有复杂的合并单元格，背景色等。但是我们现在
- * 需要以这些复杂的行作为模板，动态的在Excel中插入这种复杂的行，可以如下操作：
- * // 加载Excel模板
- * ExcelTemplate excel = new ExcelTemplate("F:\\加班表.xlsx");
- * // 验证是否可用
- * if(excel.examine()){
- *     Map<Integer, LinkedList<String>> areaValue = new LinkedHashMap<>();
- *     // 添加填充的数据
- *     LinkedList<String> array1 = new LinkedList<>();
- *     array1.add(Integer.toString(1));
- *     array1.add("123456");
- *     array1.add("张三");
- *     array1.add("2019/9/10");
- *     array1.add("2019/9/10");
- *     array1.add("2019/9/10");
- *     array1.add("2019/9/10");
- *     array1.add("项目加班");
- *     areaValue.put(1,array1);
- *     LinkedList<String> array2 = new LinkedList<>();
- *     array2.add(Integer.toString(1));
- *     array2.add("123456");
- *     array2.add("李四");
- *     array2.add("2019/9/10");
- *     array2.add("2019/9/10");
- *     array2.add("2019/9/10");
- *     array2.add("2019/9/10");
- *     array2.add("项目加班");
- *     areaValue.put(2,array2);
- *     try {
- *         excel.addRowByExist(16,16,17,areaValue,true);
- *         excel.save("F:\\测试\\poi.xlsx");
- *     } catch (InvalidFormatException e) {
- *         e.printStackTrace();
- *     } catch (IOException e) {
- *         e.printStackTrace();
- *     }
- * }
- *
- * 还有一种可能就是，模板中有些单元格的值需要动态的替换，可以使用
- * ${key} 来表示这个值是需要动态替换的，比如说有个单元格的值是要填
- * 写表格创建人，可以标记为 ${创建人}，然后如下调用：
- * // 加载Excel模板
- * ExcelTemplate excel = new ExcelTemplate("F:\\加班表.xlsx");
- * // 验证是否可用
- * if(excel.examine()){
- *     try {
- *         Map<String,String> map = new HashMap<>();
- *         map.put("创建人","张三");
- *         map.put("日期",new SimpleDateFormat("yyyy-MM-dd").format(new Date()));
- *         System.out.println("修改数量：" + excel.fillVariable(map));
- *         excel.save("F:\\测试\\poi.xlsx");
- *     } catch (InvalidFormatException e) {
- *         e.printStackTrace();
- *     } catch (IOException e) {
- *         e.printStackTrace();
- *     }
- * }
+ * @author: jyb
+ * @Description: excel模板操作
+ * @Email: 253684597@qq.com
  * */
 public class ExcelTemplate {
     private String path;
@@ -102,19 +46,24 @@ public class ExcelTemplate {
 
     private void init(){
         File file = new File(path);
-        try (InputStream is = new FileInputStream(file)){
-            workbook = WorkbookFactory.create(is);
-            sheets = new Sheet[workbook.getNumberOfSheets()];
-            for(int i = 0;i < sheets.length;i++){
-                sheets[i] = workbook.getSheetAt(i);
+        if (file.exists() && (path == null
+                || (!path.endsWith(".xlsx") && !path.endsWith(".xls"))))
+            ex = new IOException("错误的文件格式");
+        else{
+            try (InputStream is = new FileInputStream(file)){
+                workbook = WorkbookFactory.create(is);
+                sheets = new Sheet[workbook.getNumberOfSheets()];
+                for(int i = 0;i < sheets.length;i++){
+                    sheets[i] = workbook.getSheetAt(i);
+                }
+                if(sheets.length > 0)
+                    sheet = sheets[0];
+                sheet.setForceFormulaRecalculation(true);
+            } catch (EncryptedDocumentException e) {
+                ex = e;
+            } catch (IOException e) {
+                ex = e;
             }
-            if(sheets.length > 0)
-                sheet = sheets[0];
-            sheet.setForceFormulaRecalculation(true);
-        } catch (EncryptedDocumentException e) {
-            ex = e;
-        } catch (IOException e) {
-            ex = e;
         }
     }
 
@@ -165,10 +114,9 @@ public class ExcelTemplate {
      * @param delRowTemp 是否删除模板row区域
      * @return int 插入的行数量
      * @throws IOException
-     * @throws InvalidFormatException
      * */
     public int addRowByExist(int sheetNo,int fromRowStartIndex, int fromRowEndIndex,int toRowIndex, int copyNum,boolean delRowTemp)
-            throws IOException, InvalidFormatException {
+            throws IOException {
         LinkedHashMap<Integer, LinkedList<String>> map = new LinkedHashMap<>();
         for(int i = 1;i <= copyNum;i++){
             map.put(i,new LinkedList<>());
@@ -188,11 +136,10 @@ public class ExcelTemplate {
      * @param areaValues 替换模板row区域的${}值
      * @return int 插入的行数量
      * @throws IOException
-     * @throws InvalidFormatException
      * */
     public int addRowByExist(int sheetNo,int fromRowIndex, int toRowIndex,
                              LinkedHashMap<Integer,LinkedList<String>> areaValues)
-            throws IOException, InvalidFormatException {
+            throws IOException {
         return addRowByExist(sheetNo,fromRowIndex,fromRowIndex,toRowIndex,areaValues,true);
     }
 
@@ -210,11 +157,10 @@ public class ExcelTemplate {
      * @param delRowTemp 是否删除模板row区域
      * @return int 插入的行数量
      * @throws IOException
-     * @throws InvalidFormatException
      * */
     public int addRowByExist(int sheetNo,int fromRowStartIndex, int fromRowEndIndex,int toRowIndex,
                              LinkedHashMap<Integer,LinkedList<String>> areaValues, boolean delRowTemp)
-            throws InvalidFormatException, IOException {
+            throws IOException {
         exception();
         if(!examine()
                 || !initSheet(sheetNo)
@@ -270,11 +216,10 @@ public class ExcelTemplate {
      * @param delColumnTemp 是否删除模板列区域
      * @return int 插入的列数量
      * @throws IOException
-     * @throws InvalidFormatException
      * */
     public int addColumnByExist(int sheetNo,int fromColumnStartIndex, int fromColumnEndIndex,int toColumnIndex,
                                 LinkedHashMap<Integer,LinkedList<String>> areaValues, boolean delColumnTemp)
-            throws InvalidFormatException, IOException{
+            throws IOException{
         exception();
         if(!examine()
                 || !initSheet(sheetNo)
@@ -422,11 +367,10 @@ public class ExcelTemplate {
      * @param delColumnTemp 是否删除模板列区域
      * @return int 插入的列数量
      * @throws IOException
-     * @throws InvalidFormatException
      * */
     public int addColumnByExist(int sheetNo,int fromColumnStartIndex, int fromColumnEndIndex,int toColumnIndex,
                                 int copyNum, boolean delColumnTemp)
-            throws InvalidFormatException, IOException{
+            throws IOException{
         LinkedHashMap<Integer, LinkedList<String>> map = new LinkedHashMap<>();
         for(int i = 1;i <= copyNum;i++){
             map.put(i,new LinkedList<>());
@@ -440,9 +384,8 @@ public class ExcelTemplate {
      * @param fillValues 填充的值
      * @return int 受影响的变量数量
      * @throws IOException
-     * @throws InvalidFormatException
      **/
-    public int fillVariable(Map<String,String> fillValues) throws IOException, InvalidFormatException {
+    public int fillVariable(Map<String,String> fillValues) throws IOException {
         return fillVariable(0,fillValues);
     }
 
@@ -453,10 +396,9 @@ public class ExcelTemplate {
      * @param fillValues 填充的值
      * @return int 受影响的变量数量
      * @throws IOException
-     * @throws InvalidFormatException
      **/
     public int fillVariable(int sheetNo,Map<String,String> fillValues)
-            throws IOException, InvalidFormatException {
+            throws IOException {
         exception();
         if(!examine()
                 || sheetNo < 0
@@ -516,10 +458,9 @@ public class ExcelTemplate {
      * @param value 填充的值
      * @return boolean 是否成功
      * @throws IOException
-     * @throws InvalidFormatException
      **/
     public boolean fillByCoordinate(int sheetNo,int rowIndex,int columnIndex,String value)
-            throws IOException, InvalidFormatException {
+            throws IOException {
         exception();
         if(!initSheet(sheetNo))
             return false;
@@ -1161,10 +1102,10 @@ public class ExcelTemplate {
         return true;
     }
 
-    private void exception() throws InvalidFormatException, IOException {
+    private void exception() throws EncryptedDocumentException, IOException {
         if(ex != null){
-            if(ex instanceof InvalidFormatException)
-                throw new InvalidFormatException("错误的文件格式");
+            if(ex instanceof EncryptedDocumentException)
+                throw new EncryptedDocumentException("无法读取的加密文件");
             else if(ex instanceof IOException)
                 throw new IOException(ex);
             else
@@ -1507,10 +1448,9 @@ public class ExcelTemplate {
      *
      * @param path 存储路径
      * @throws IOException
-     * @throws InvalidFormatException
      */
     public void save(String path) throws
-            IOException, InvalidFormatException {
+            IOException {
         exception();
         if(!examine())
             return;
@@ -1541,10 +1481,9 @@ public class ExcelTemplate {
      *
      * @return Workbook
      * @throws IOException
-     * @throws InvalidFormatException
      * */
     public Workbook getWorkbook()
-            throws IOException, InvalidFormatException {
+            throws IOException {
         exception();
         return workbook;
     }
@@ -1597,77 +1536,5 @@ public class ExcelTemplate {
     public String toString(){
         return "ExcelTemplate from " + path + " is " +
                 (examine() ? "effective" : "invalid");
-    }
-
-    public static void main(String[] args) {
-        ExcelTemplate excel = new ExcelTemplate("F:\\文件\\学生成绩模板.xlsx");
-        // 使用一个Map来存储所有的行区域，
-        // 每个行区域对应Map的一个键
-        LinkedHashMap<Integer, LinkedList<String>> rows = new LinkedHashMap<>();
-        // 创建第一个行区域里面填充的值，ExcelTemplate会按从左至右，
-        // 从上往下的顺序，挨个填充区域里面的${}，所以创建的时候注意顺序就好
-        LinkedList<String> row1 = new LinkedList<>();
-        row1.add("张三");
-        row1.add("90");
-        row1.add("87");
-        row1.add("76");
-        row1.add("82.3");
-        row1.add("85");
-        // 把第一个行区域row1添加进入rows
-        rows.put(1,row1);
-        // 创建第二个行区域里面填充的值
-        LinkedList<String> row2 = new LinkedList<>();
-        row2.add("李四");
-        row2.add("70");
-        row2.add("66");
-        row2.add("87");
-        row2.add("92");
-        row2.add("81");
-        // 把第二个行区域row2添加进入rows
-        rows.put(2,row2);
-        try {
-            // 获取到刚插入的行的数量
-            int addRowNum = excel.addRowByExist(0,2,2,
-                    3,rows,true);
-            List<Row> rowList = new ArrayList<>();
-            // 获取当前Sheet
-            Sheet sheet = excel.getWorkbook().getSheetAt(0);
-            // 从插入位置开始循环，获取刚插入的行
-            for (int i = 2;i < 2 + addRowNum;i++){
-                rowList.add(sheet.getRow(i));
-            }
-            // 循环读取刚插入的行
-            for (int i = 0; i < rowList.size(); i++) {
-                Row row = rowList.get(i);
-                if (row == null)
-                    continue;
-                // 循环行的每个单元格
-                for (int j = 0; j <= row.getLastCellNum(); j++) {
-                    Cell cell = row.getCell(j);
-                    // 单元格必须是公式类型的
-                    if (cell == null || cell.getCellType() != CellType.FORMULA)
-                        continue;
-                    // 获取单元格公式参数的个数
-                    // 比如 SUM(B3:F3)，有两个两个参数 B3 F3
-                    // 比如 COUNTIF($E2:$AI2,"病")*12+COUNTIF($E2:$AI2,"病4H")*4
-                    // 就有四个参数 E2、AI2、E2、AI2 注意，重复的（上述含有两个E2）也算！
-                    int formulaVariableNum = excel.getFormulaVariableNum(cell);
-                    // 循环操作参数，给参数添加行，添加列等
-                    for (int k = 0; k < formulaVariableNum; k++) {
-                        // 第一个参数，当前的单元格
-                        // 第二个参数，操作的是公式里的第几个参数（比如说是B3，还是F3）
-                        // 第三个参数，这个参数的行添加量
-                        // 第四个参数，这个参数的列添加量
-                        // 如果还是不懂的话，可以查看composeCellFormula方法的注释
-                        excel.composeCellFormula(cell,k,i,0);
-                    }
-                }
-            }
-            excel.save("F:\\测试\\学生成绩统计.xlsx");
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InvalidFormatException e) {
-            e.printStackTrace();
-        }
     }
 }

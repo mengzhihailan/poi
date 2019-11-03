@@ -32,8 +32,6 @@ public class ExcelTemplate {
 
     private List<Cell> cellList = null;
 
-    private int[] alphabet;
-
     private Pattern doublePattern = Pattern.compile("^[0-9]+[.]{0,1}[0-9]*[dD]{0,1}$");
 
     /**

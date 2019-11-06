@@ -271,6 +271,13 @@ public class ExcelToHtml {
             case BLANK:
                 result = "";
                 break;
+            case FORMULA:
+                try{
+                    result = String.valueOf(cell.getNumericCellValue());
+                } catch (Exception e){
+                    result = String.valueOf(cell.getRichStringCellValue());
+                }
+                break;
             default:
                 result = "";
                 break;

@@ -793,6 +793,8 @@ public class ExcelTemplate {
                                     if(value != null)
                                         valueList.remove(valueList.indexOf(value));
                                 }
+                                else
+                                    throw new IllegalArgumentException("N${} 所替换的内容只能为数字");
                             }
                         }
                     }

@@ -794,7 +794,7 @@ public class ExcelTemplate {
                                         valueList.remove(valueList.indexOf(value));
                                 }
                                 else
-                                    throw new IllegalArgumentException("N${} 所替换的内容只能为数字");
+                                    throw new IllegalArgumentException("N${} 所替换的内容只能为数字,非法参数\"" + value + "\"");
                             }
                         }
                     }

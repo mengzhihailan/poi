@@ -175,7 +175,7 @@ public class ExcelTemplate {
             for (Integer key:areaValues.keySet()){
                 List<Row> temp = new LinkedList<>();
                 // 插入行
-                for(int i = sheet.getFirstRowNum();i < areaNum;i++){
+                for(int i = 0;i < areaNum;i++){
                     int num = areaNum * n + i;
                     Row toRow = sheet.getRow(toRowIndex + num);
                     Row row;

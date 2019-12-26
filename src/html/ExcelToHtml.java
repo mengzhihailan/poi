@@ -1,8 +1,10 @@
 package html;
 
-import export.ExcelTemplate;
 import org.apache.poi.hssf.usermodel.*;
 import org.apache.poi.hssf.util.HSSFColor;
+import org.apache.poi.ss.formula.ConditionalFormattingEvaluator;
+import org.apache.poi.ss.formula.EvaluationConditionalFormatRule;
+import org.apache.poi.ss.formula.WorkbookEvaluatorProvider;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.*;
@@ -10,92 +12,58 @@ import org.apache.poi.xssf.usermodel.*;
 import java.io.*;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ExcelToHtml {
+    static FormulaEvaluator evaluator;
+
+    private static final Pattern pattern = Pattern.compile("^IFERROR\\((.*),{1}(.*)\\)$");
+
+    private static CellStyle conditionalFormulaStyle;
+
+    private static boolean isXSSF = true;
+
+    private static Workbook workbook;
+
     /**
      * Excel转换为html
      *
      * @param sourcePath
      *          excel文件路径
-     * @param sourceFileName
-     *          excel文件名
      * @param savePath
      *          存储路径
-     * @return
+     * @param saveName
+     *          存储名称
      * @return
      */
-    public String excelToHtml(String sourcePath,String sourceFileName,String suffix,String savePath) throws IOException {
-        if(".csv".equals(suffix)){
-            try {
-                String excelPath = csvToExcel(sourcePath,sourceFileName + suffix,savePath);
-                File file = new File(excelPath);
-                if(!file.exists())
-                    throw new FileNotFoundException();
-                // 重新赋值需要读取的文件的路径
-                sourcePath = excelPath.substring(0,excelPath.lastIndexOf(File.separator)+1);
-                sourceFileName = excelPath.substring(excelPath.lastIndexOf(File.separator)+1,excelPath.length());
-                if(sourceFileName.lastIndexOf(".") < 0)
-                    throw new Exception("没有文件类型的文件，不支持预览");
-                suffix = sourceFileName.substring(sourceFileName.lastIndexOf("."),sourceFileName.length());
-                sourceFileName = sourceFileName.substring(0,sourceFileName.lastIndexOf("."));
-            } catch (Exception e) {
-                throw new EOFException(e.getMessage());
-            }
-            sourcePath = savePath;
-        }
-
-        // 获取源文件名称
-        sourceFileName = sourceFileName + suffix;
-        String excelName = SHA256.getSHA(sourceFileName);
-        String htmlPath = savePath + File.separator + excelName+".html";
-        File targetFile = new File(savePath+File.separator);
-        if(!targetFile.exists()){
-            targetFile.mkdirs();
-        }
-        // 读取源文件流
-        InputStream is = null;
-        // 写入目标文件流
-        FileOutputStream outputStream = null;
-        // 返回的html
-        String htmlExcel = null;
-        try {
-            is = new FileInputStream(new File(sourcePath + File.separator +sourceFileName));
+    static String conversion(String sourcePath,String savePath,String saveName)
+            throws FileNotFoundException,IOException{
+        String path = null;
+        String html = "";
+        try(InputStream is = new FileInputStream(new File(sourcePath))) {
             Workbook wb = WorkbookFactory.create(is);
-            // HSSFWorkbook（xls）和 XSSFWorkbook （xlsx）
+            workbook = wb;
+            evaluator = wb.getCreationHelper().createFormulaEvaluator();
+            conditionalFormulaStyle = wb.createCellStyle();
             if (wb instanceof XSSFWorkbook) {
                 XSSFWorkbook xWb = (XSSFWorkbook) wb;
-                htmlExcel = getExcelInfo(xWb,true);
+                html = getExcelInfo(xWb,true);
             }else if(wb instanceof HSSFWorkbook){
+                isXSSF = false;
                 HSSFWorkbook hWb = (HSSFWorkbook) wb;
-                htmlExcel = getExcelInfo(hWb,true);
+                html = getExcelInfo(hWb,true);
             }
-            // 将内容存放到html中
-            File html = new File(htmlPath);
-            if(html.exists()){
-                return excelName + ".html";
+            File file = new File(savePath + File.separator + saveName + ".html");
+            if(file.exists()){
+                return file.getPath();
             }
-            // 写入到指定的文件
-            outputStream = new FileOutputStream(html);
-            outputStream.write(htmlExcel.getBytes("gbk"));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }finally{
-            try {
-                if(is!=null){
-                    is.close();
-                }
-                if(outputStream!=null){
-                    outputStream.close();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
+            try(OutputStream os = new FileOutputStream(file)){
+                os.write(html.getBytes());
             }
         }
-        return excelName + ".html";
+        return path;
     }
 
     /**
@@ -104,7 +72,13 @@ public class ExcelToHtml {
      * @param isWithStyle
      * @return
      */
-    public String getExcelInfo(Workbook wb, boolean isWithStyle){
+    static String getExcelInfo(Workbook wb, boolean isWithStyle){
+        workbook = wb;
+        evaluator = wb.getCreationHelper().createFormulaEvaluator();
+        conditionalFormulaStyle = wb.createCellStyle();
+        if(wb instanceof HSSFWorkbook){
+            isXSSF = false;
+        }
         String domain = System.getProperty("BASF-DOMAIN");
         domain = domain == null ? "" : domain;
         StringBuffer sb = new StringBuffer();
@@ -127,7 +101,24 @@ public class ExcelToHtml {
         sb.append("</div>").append("<div class=\"investment_con\">");
         for(int i = 0; i < wb.getNumberOfSheets(); i++){
             sb.append("<div class=\"investment_con_list\">");
-            Sheet sheet = wb.getSheetAt(i);//获取每一个Sheet的内容
+
+            Sheet sheet = wb.getSheetAt(i);
+
+            // get conditional formatting in the sheet
+            SheetConditionalFormatting formatting = sheet.getSheetConditionalFormatting();
+
+            int formattingsNum = formatting.getNumConditionalFormattings();
+
+            ConditionalFormatting[] conditionalFormattings = new ConditionalFormatting[0];
+            if (formattingsNum != 0){
+                conditionalFormattings = new ConditionalFormatting[formattingsNum];
+                // get all conditional formatting
+                for (int j = 0; j < formattingsNum; j++) {
+                    ConditionalFormatting conditionalFormatting = formatting.getConditionalFormattingAt(j);
+                    conditionalFormattings[j] = conditionalFormatting;
+                }
+            }
+
             sb.append("<div class='tab"+i+"'>");
 
             int lastRowNum = sheet.getLastRowNum();//获取最后一行的编号
@@ -151,7 +142,7 @@ public class ExcelToHtml {
                         continue;
                     }
 
-                    String stringValue = getCellValue(cell);
+                    String stringValue = getCellValue(cell,conditionalFormattings);
                     if (map[0].containsKey(rowNum + "," + colNum)) {
                         String pointString = map[0].get(rowNum + "," + colNum);
                         map[0].remove(rowNum + "," + colNum);
@@ -196,7 +187,7 @@ public class ExcelToHtml {
      * @param sheet
      * @return
      */
-    private Map<String, String>[] getRowSpanColSpanMap(Sheet sheet) {
+    static Map<String, String>[] getRowSpanColSpanMap(Sheet sheet) {
 
         Map<String, String> map0 = new HashMap<String, String>();
         Map<String, String> map1 = new HashMap<String, String>();
@@ -209,7 +200,6 @@ public class ExcelToHtml {
             int bottomRow = range.getLastRow();
             int bottomCol = range.getLastColumn();
             map0.put(topRow + "," + topCol, bottomRow + "," + bottomCol);
-            // System.out.println(topRow + "," + topCol + "," + bottomRow + "," + bottomCol);
             int tempRow = topRow;
             while (tempRow <= bottomRow) {
                 int tempCol = topCol;
@@ -230,8 +220,7 @@ public class ExcelToHtml {
      * @param cell
      * @return
      */
-    private String getCellValue(Cell cell) {
-
+    static String getCellValue(Cell cell,ConditionalFormatting[] conditionalFormattings) {
         String result = new String();
         switch (cell.getCellType()) {
             case NUMERIC:// 数字类型
@@ -256,10 +245,8 @@ public class ExcelToHtml {
                     CellStyle style = cell.getCellStyle();
                     DecimalFormat format = new DecimalFormat();
                     String temp = style.getDataFormatString();
-                    // System.out.println(temp);
                     // 单元格设置成常规
                     if ("General".equals(temp)) {
-//                    	if (temp.equals("General")) {
                         format.applyPattern("#");
                     }
                     result = format.format(value);
@@ -273,16 +260,65 @@ public class ExcelToHtml {
                 break;
             case FORMULA:
                 try{
-                    result = String.valueOf(cell.getNumericCellValue());
+                    CellValue cellValue = evaluator.evaluate(cell);
+                    if (cellValue.getCellType() == CellType.STRING){
+                        result = cellValue.getStringValue();
+                    }
+                    else if(cellValue.getCellType() == CellType.NUMERIC){
+                        result = Double.toString(cellValue.getNumberValue());
+                    }
                 } catch (Exception e){
-                    result = String.valueOf(cell.getRichStringCellValue());
+                    String formula = cell.getCellFormula();
+                    Matcher matcher = pattern.matcher(formula);
+                    if (matcher.find()){
+                        String value = matcher.group();
+                        String[] strs = value.split(",");
+                        int length = 0;
+                        if ((length = strs.length) > 0){
+                            String errorValue = strs[length - 1];
+                            if (Objects.nonNull(errorValue) && errorValue.length() > 1){
+                                result = errorValue.substring(0,errorValue.length() - 1);
+                                cell.setCellValue(result);
+                                break;
+                            }
+                        }
+                    }
+                    result = "";
                 }
                 break;
             default:
                 result = "";
                 break;
         }
+
+        // cell上匹配成功的条件格式规则
+        List<EvaluationConditionalFormatRule> mathcerRules = getMatchingConditionalFormattingForCell(cell);
+
+        for (EvaluationConditionalFormatRule ruleEvaluation:mathcerRules){
+            ConditionalFormattingRule cFRule = ruleEvaluation.getRule();
+            PatternFormatting patternFormatting;
+            if ((patternFormatting = cFRule.getPatternFormatting()) != null){
+                // 获取填充色
+                Color color = patternFormatting.getFillBackgroundColorColor();
+                // 暂时只处理了 PatternFormatting 的填充色，后续有需再添加去了
+                addConditionStyle(cell,color);
+            }
+        }
         return result;
+    }
+
+    private static void addConditionStyle(Cell cell,Color color){
+        if (cell == null || color == null)
+            return;
+        conditionalFormulaStyle = workbook.createCellStyle();
+        if (isXSSF){
+            ((XSSFCellStyle)conditionalFormulaStyle).setFillForegroundColor((XSSFColor) color);
+        }
+        else {
+            conditionalFormulaStyle.setFillForegroundColor(((HSSFColor)color).getIndex());
+        }
+        // 符合条件需要添加指定样式
+        cell.setCellStyle(conditionalFormulaStyle);
     }
 
     /**
@@ -292,13 +328,13 @@ public class ExcelToHtml {
      * @param cell
      * @param sb
      */
-    private void dealExcelStyle(Workbook wb, Sheet sheet, Cell cell, StringBuffer sb){
+    static void dealExcelStyle(Workbook wb, Sheet sheet, Cell cell, StringBuffer sb){
 
         CellStyle cellStyle = cell.getCellStyle();
         if (cellStyle != null) {
             short alignment = cellStyle.getAlignment().getCode();
             sb.append("align='" + convertAlignToHtml(alignment) + "' ");//单元格内容的水平对齐方式
-            short verticalAlignment = cellStyle.getVerticalAlignment().getCode();
+            short verticalAlignment = cellStyle.getAlignment().getCode();
             sb.append("valign='"+ convertVerticalAlignToHtml(verticalAlignment)+ "' ");//单元格中内容的垂直排列方式
 
             if (wb instanceof XSSFWorkbook) {
@@ -363,7 +399,7 @@ public class ExcelToHtml {
      * @param alignment
      * @return
      */
-    private String convertAlignToHtml(short alignment) {
+    static String convertAlignToHtml(short alignment) {
         String align = "left";
         if(alignment == HorizontalAlignment.LEFT.getCode()){ align = "left";}
         else if(alignment == HorizontalAlignment.CENTER.getCode()){ align = "center";}
@@ -376,7 +412,7 @@ public class ExcelToHtml {
      * @param verticalAlignment
      * @return
      */
-    private String convertVerticalAlignToHtml(short verticalAlignment) {
+    static String convertVerticalAlignToHtml(short verticalAlignment) {
 
         String valign = "middle";
         if(verticalAlignment == VerticalAlignment.BOTTOM.getCode()){valign = "bottom";}
@@ -385,7 +421,7 @@ public class ExcelToHtml {
         return valign;
     }
 
-    private String convertToStardColor(HSSFColor hc) {
+    static String convertToStardColor(HSSFColor hc) {
 
         StringBuffer sb = new StringBuffer("");
         if (hc != null) {
@@ -401,17 +437,17 @@ public class ExcelToHtml {
         return sb.toString();
     }
 
-    private String fillWithZero(String str) {
+    static String fillWithZero(String str) {
         if (str != null && str.length() < 2) {
             return "0" + str;
         }
         return str;
     }
 
-    String[] bordesr={"border-top:","border-right:","border-bottom:","border-left:"};
-    String[] borderStyles={"solid ","solid ","solid ","solid ","solid ","solid ","solid ","solid ","solid ","solid","solid","solid","solid","solid"};
+    static String[] bordesr={"border-top:","border-right:","border-bottom:","border-left:"};
+    static String[] borderStyles={"solid ","solid ","solid ","solid ","solid ","solid ","solid ","solid ","solid ","solid","solid","solid","solid","solid"};
 
-    private String getBorderStyle(HSSFPalette palette , int b, short s, short t){
+    static String getBorderStyle(HSSFPalette palette , int b, short s, short t){
 
         if(s==0)return  bordesr[b]+borderStyles[s]+"#d0d7e5 1px;";
         String borderColorStr = convertToStardColor( palette.getColor(t));
@@ -420,7 +456,7 @@ public class ExcelToHtml {
 
     }
 
-    private String getBorderStyle(int b,short s, XSSFColor xc){
+    static String getBorderStyle(int b,short s, XSSFColor xc){
 
         if(s==0)return  bordesr[b]+borderStyles[s]+"#d0d7e5 1px;";;
         if (xc != null && !"".equals(xc)) {
@@ -432,83 +468,90 @@ public class ExcelToHtml {
         return "";
     }
 
-    /**
-     * 把csv转换为xlsx存储
-     *
-     * @param sourcePath csv文件路径
-     * @param sourceFileName 源文件名
-     * @param savaPath 存储路径
-     * @return String 转换完成的xlsx的存储路径
-     * */
-    private String csvToExcel(String sourcePath,String sourceFileName,String savaPath) throws Exception{
-        ArrayList arList;
-        ArrayList al;
-        int i = 0;
-        String thisLine;
-        String excelSavePath = savaPath + File.separator + SHA256.getSHA(sourceFileName) + ".xlsx";
-        try(InputStreamReader fr = new InputStreamReader(
-                new FileInputStream(sourcePath + File.separator + sourceFileName),"utf-8");
-            BufferedReader br = new BufferedReader(fr)){
-            arList = new ArrayList();
-            // 获取csv文件的行，存储在arList当中
-            while ((thisLine = br.readLine()) != null) {
-                al = new ArrayList();
-                // 获取每一列
-                String strar[] = thisLine.split(",");
-                for(int j=0;j<strar.length;j++) {
-                    al.add(strar[j]);
-                }
-                arList.add(al);
-                i++;
-            }
+    private static void usage(String error) throws IOException {
+        String msg = "Excel转HTML出现错误\n"
+                + (error == null ? "" : "错误信息: " + error + "\n") +
+                "参数选项:\n" +
+                "-source <必填> Excel文件路径\n" +
+                "-save <必填> 存储路径 \n" +
+                "-name <必填> 存储的html名称\n";
+        throw new IllegalArgumentException(msg);
+    }
 
-            // 创建工作表
-            XSSFWorkbook hwb = new XSSFWorkbook();
-            XSSFSheet sheet = hwb.createSheet("sheet1");
-            // 读取csv的行
-            for(int k=0;k<arList.size();k++) {
-                // 读取列
-                ArrayList ardata = (ArrayList)arList.get(k);
-                XSSFRow row = sheet.createRow((short) 0+k);
-                // 转换写入工作表行
-                for(int p=0;p<ardata.size();p++) {
-                    XSSFCell cell = row.createCell((short) p);
-                    String data = ardata.get(p).toString();
-                    if(data.startsWith("=")){
-                        cell.setCellType(CellType.STRING);
-                        data=data.replaceAll("\"", "");
-                        data=data.replaceAll("=", "");
-                        cell.setCellValue(data);
-                    }else if(data.startsWith("\"")){
-                        data=data.replaceAll("\"", "");
-                        cell.setCellType(CellType.STRING);
-                        cell.setCellValue(data);
-                    }else{
-                        data=data.replaceAll("\"", "");
-                        cell.setCellType(CellType.NUMERIC);
-                        cell.setCellValue(data);
-                    }
-                }
-            }
+    // 获取某个cell所有的条件格式规则
+    private static List<EvaluationConditionalFormatRule> getMatchingConditionalFormattingForCell(Cell cell){
+        List<EvaluationConditionalFormatRule> rules = new ArrayList<>();
 
-            try(FileOutputStream fos = new FileOutputStream(excelSavePath)){
-                hwb.write(fos);
-            }
+        // Workbook各种评估器的提供者
+        WorkbookEvaluatorProvider workbookEvaluatorProvider =
+                (WorkbookEvaluatorProvider)workbook.getCreationHelper().createFormulaEvaluator();
+
+        // 条件格式评估器初始化
+        ConditionalFormattingEvaluator conditionalFormattingEvaluator =
+                new ConditionalFormattingEvaluator(workbook,workbookEvaluatorProvider);
+
+        // 获取cell的 规则评估器
+        List<EvaluationConditionalFormatRule> allCFRulesForCell = conditionalFormattingEvaluator.getConditionalFormattingForCell(cell);
+
+        for (EvaluationConditionalFormatRule evalCFRule :allCFRulesForCell) {
+            // 获取某个规则涵盖的所有cell matchingCells
+            List<Cell> matchingCells = conditionalFormattingEvaluator.getMatchingCells(evalCFRule);
+            // 如果 matchingCells 涵盖当前的cell，表示当前的cell含有此条规则，添加
+            if (matchingCells.contains(cell)) rules.add(evalCFRule);
         }
-        catch (UnsupportedEncodingException e) {
-            throw new UnsupportedEncodingException("不支持的csv编码格式");
-        } catch (FileNotFoundException e) {
-            throw new FileNotFoundException();
-        } catch (IOException e) {
-            throw new IOException();
-        }
-        return excelSavePath;
+
+        return rules;
     }
 
     public static void main(String[] args) {
-        ExcelToHtml excelToHtml = new ExcelToHtml();
         try {
-            excelToHtml.excelToHtml("F:\\文件","副本BCSC-2019年9月份排班表",".xlsx","F:\\测试");
+            if (args == null || args.length == 0) {
+                usage("没有传入必填的参数！");
+                return;
+            }
+            String source = "";
+            String save = "";
+            String name = "";
+            for(int i = 0; i < args.length / 2; ++i) {
+                String key = args[i * 2];
+                String value = i * 2 + 1 < args.length ? args[i * 2 + 1] : "";
+                switch(key.hashCode()) {
+                    case 386454152:
+                        if ("-source".equals(key)) {
+                            source = value;
+                        }
+                        break;
+                    case 45081386:
+                        if ("-save".equals(key)) {
+                            save = value;
+                        }
+                        break;
+                    case 44932152:
+                        if ("-name".equals(key)) {
+                            name = value;
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+            if ("".equals(source)){
+                usage("参数 -source 是必填项！");
+                return;
+            }
+            if ("".equals(save)){
+                usage("参数 -save 是必填项！");
+                return;
+            } if ("".equals(name)){
+                usage("参数 -name 是必填项！");
+                return;
+            }
+            if(!source.endsWith("xlsx") && !source.endsWith("xls")){
+                usage("参数 -source 只能为xls和xlsx文件！");
+                return;
+            }
+            conversion(source,save,name);
+            System.out.println("successful");
         } catch (IOException e) {
             e.printStackTrace();
         }
